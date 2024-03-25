@@ -31,7 +31,7 @@ def call_perplexity_api(topic):
 def refine_content_with_gpt(raw_content):
     try:
         response = openai.Completion.create(
-            engine="text-davinci-004",  # Updated to GPT-4 engine
+            model="text-davinci-004",  # Ensure this is the correct GPT-4 model you have access to
             prompt=f"Refine and format this content: \"{raw_content}\"",
             temperature=0.5,
             max_tokens=150,
@@ -39,7 +39,8 @@ def refine_content_with_gpt(raw_content):
             frequency_penalty=0.0,
             presence_penalty=0.0
         )
-        return response.choices[0].text.strip()
+        # Adjusting the response parsing based on the new interface
+        return response['choices'][0]['text'].strip()
     except Exception as e:
         return f"An error occurred: {str(e)}"
 
