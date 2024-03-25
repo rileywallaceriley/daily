@@ -2,23 +2,23 @@ import streamlit as st
 import requests
 import openai
 
-# Setup API keys (Replace 'your_api_key_here' with your actual API keys stored in Streamlit secrets)
+# Setup for API keys from Streamlit's secrets
 perplexity_api_key = st.secrets["perplexity"]["api_key"]
 openai_api_key = st.secrets["openai"]["api_key"]
 
 openai.api_key = openai_api_key
 
 def call_perplexity_api(topic):
-    url = 'https://api.perplexity.ai/v1/chat/completions'
+    url = 'https://api.perplexity.ai/chat/completions'
     headers = {
         'Authorization': f'Bearer {perplexity_api_key}',
         'Content-Type': 'application/json',
         'Accept': 'application/json'
     }
     payload = {
-        "model": "gpt-4-0125-preview",  # Adjust based on the Perplexity's documentation
+        "model": "mistral-7b-instruct",
         "messages": [
-            {"role": "system", "content": "You're a knowledgeable assistant tasked with providing detailed news stories and playlists including source links."},
+            {"role": "system", "content": "Be precise and concise."},
             {"role": "user", "content": topic}
         ]
     }
@@ -28,46 +28,51 @@ def call_perplexity_api(topic):
     else:
         return f"Failed with status code {response.status_code}: {response.text}"
 
-def refine_content_with_gpt(content):
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4-0125-preview",
-            messages=[
-                {"role": "system", "content": "You are an AI who formats provided content into a concise, readable format for web display, ensuring to retain all original details and links."},
-                {"role": "user", "content": content}
-            ]
-        )
-        return response['choices'][0]['message']['content'].strip()
-    except Exception as e:
-        return f"An error occurred: {str(e)}"
+def refine_content_with_gpt(raw_content):
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=f"Refine and format this content: \"{raw_content}\"",
+        temperature=0.5,
+        max_tokens=150,
+        top_p=1.0,
+        frequency_penalty=0.0,
+        presence_penalty=0.0
+    )
+    return response.choices[0].text.strip()
 
 # Streamlit app layout
-st.title('Your Daily Digest and Playlist Generator')
+st.title('Your Daily Digest and Playlist')
 
 with st.form("user_input"):
     name = st.text_input("Name")
-    vibe = st.text_input("Vibe", help="Describe the vibe for your music playlist.")
-    topic = st.text_input("News Topic", help="Enter a topic to get the latest news.")
+    vibe = st.text_input("Vibe")
+    astro_sign = st.selectbox("Astrological Sign", ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"])
+    interests = st.multiselect("Select your interests", ["Positive News", "AI and Tech", "Gossip", "Hip-Hop"])
     submitted = st.form_submit_button("Submit")
 
 if submitted:
     with st.spinner('Fetching your personalized content...'):
-        # Fetch news
-        news_query = f"latest news about {topic} including source links"
-        news_content = call_perplexity_api(news_query)
+        # Fetch horoscope
+        horoscope_raw = call_perplexity_api(f"horoscope for {astro_sign}")
+        horoscope = refine_content_with_gpt(horoscope_raw)
         
-        # Fetch playlist
-        playlist_query = f"music playlist suggestions for a {vibe} vibe including source links"
-        playlist_content = call_perplexity_api(playlist_query)
+        # Fetch news based on interests
+        news_stories = [call_perplexity_api(f"latest news on {topic}") for topic in interests]
+        refined_news_stories = [refine_content_with_gpt(story) for story in news_stories]
         
-        # Optional: Refine content with GPT-4 for readability
-        refined_news = refine_content_with_gpt(news_content)
-        refined_playlist = refine_content_with_gpt(playlist_content)
+        # Fetch music playlist based on vibe
+        playlist_raw = call_perplexity_api(f"music playlist for vibe {vibe}")
+        playlist = refine_content_with_gpt(playlist_raw)
 
-    st.success('Content fetched successfully!')
+    st.success('Here’s what we found for you!')
     
-    st.subheader('Latest News')
-    st.write(refined_news)
+    st.subheader('Your Personalized Horoscope')
+    st.write(horoscope)
 
-    st.subheader('Music Playlist Suggestions')
-    st.write(refined_playlist)
+    if refined_news_stories:
+        st.subheader('Latest News For You')
+        for story in refined_news_stories:
+            st.write(story)
+    
+    st.subheader('Your Music Playlist Recommendations')
+    st.write(playlist)
