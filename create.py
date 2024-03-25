@@ -30,20 +30,18 @@ def call_perplexity_api(topic):
 
 def refine_content_with_gpt(raw_content):
     try:
-        response = openai.Completion.create(
-            model="gpt-4-0125-preview",  # Ensure this is the correct GPT-4 model you have access to
-            prompt=f"Refine and format this content: \"{raw_content}\"",
-            temperature=0.5,
-            max_tokens=150,
-            top_p=1.0,
-            frequency_penalty=0.0,
-            presence_penalty=0.0
+        response = openai.ChatCompletion.create(
+            model="gpt-4-0125-preview",  # Updated to the specified GPT-4 model
+            messages=[
+                {"role": "system", "content": "You are a highly knowledgeable assistant, tasked with refining and formatting content."},
+                {"role": "user", "content": f"Refine and format this content: \"{raw_content}\""}
+            ]
         )
-        # Adjusting the response parsing based on the new interface
-        return response['choices'][0]['text'].strip()
+        # Extracting the response based on the expected structure for chat completions
+        return response['choices'][0]['message']['content'].strip()
     except Exception as e:
+        # Handling exceptions and returning the error message
         return f"An error occurred: {str(e)}"
-
 # Streamlit app layout
 st.title('Your Daily Digest and Playlist')
 
