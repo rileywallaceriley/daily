@@ -31,7 +31,7 @@ def call_perplexity_api(topic):
 def refine_content_with_gpt(raw_content):
     try:
         response = openai.Completion.create(
-            model="GPT-4",  # Ensure this is the correct GPT-4 model you have access to
+            model="gpt-4-0125-preview",  # Ensure this is the correct GPT-4 model you have access to
             prompt=f"Refine and format this content: \"{raw_content}\"",
             temperature=0.5,
             max_tokens=150,
