@@ -1,33 +1,44 @@
 import streamlit as st
-# Assuming you have the OpenAI and Perplexity clients set up correctly
-from openai_integration import OpenAI_Client
-from perplexity_integration import Perplexity_Client
+import requests
+import openai
 
-# Initialize your API clients (replace placeholders with your actual keys and setup)
-openai_client = OpenAI_Client(api_key="your_openai_api_key")
-perplexity_client = Perplexity_Client(api_key="your_perplexity_api_key")
+# Setup for API keys from Streamlit's secrets
+perplexity_api_key = st.secrets["perplexity"]["api_key"]
+openai_api_key = st.secrets["openai"]["api_key"]
 
-def get_horoscope(sign, name):
-    # This is a placeholder function for horoscope generation
-    # Replace with your actual OpenAI API call
-    response = openai_client.query(f"Generate a daily horoscope for {sign}. Make it personalized for {name}.")
-    return response
+openai.api_key = openai_api_key
 
-def get_news_topics(topics):
-    # Placeholder for fetching news based on selected topics using Perplexity
-    # Iterate through topics, fetch news, and format with GPT-3
-    news_results = []
-    for topic in topics:
-        raw_news = perplexity_client.search(f"Latest news on {topic}")
-        formatted_news = openai_client.format(raw_news)
-        news_results.append(formatted_news)
-    return news_results
+def call_perplexity_api(topic):
+    url = 'https://api.perplexity.ai/chat/completions'
+    headers = {
+        'Authorization': f'Bearer {perplexity_api_key}',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+    payload = {
+        "model": "mistral-7b-instruct",
+        "messages": [
+            {"role": "system", "content": "Be precise and concise."},
+            {"role": "user", "content": topic}
+        ]
+    }
+    response = requests.post(url, headers=headers, json=payload)
+    if response.status_code == 200:
+        return response.json()['choices'][0]['message']['content']
+    else:
+        return f"Failed with status code {response.status_code}: {response.text}"
 
-def get_music_playlist(vibe):
-    # Placeholder function for music recommendations
-    # Replace with your actual implementation
-    response = openai_client.query(f"Recommend a global music playlist for the vibe: {vibe}.")
-    return response
+def refine_content_with_gpt(raw_content):
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=f"Refine and format this content: \"{raw_content}\"",
+        temperature=0.5,
+        max_tokens=150,
+        top_p=1.0,
+        frequency_penalty=0.0,
+        presence_penalty=0.0
+    )
+    return response.choices[0].text.strip()
 
 # Streamlit app layout
 st.title('Your Daily Digest and Playlist')
@@ -41,19 +52,27 @@ with st.form("user_input"):
 
 if submitted:
     with st.spinner('Fetching your personalized content...'):
-        horoscope = get_horoscope(astro_sign, name)
-        news_stories = get_news_topics(interests)
-        music_playlist = get_music_playlist(vibe)
+        # Fetch horoscope
+        horoscope_raw = call_perplexity_api(f"horoscope for {astro_sign}")
+        horoscope = refine_content_with_gpt(horoscope_raw)
+        
+        # Fetch news based on interests
+        news_stories = [call_perplexity_api(f"latest news on {topic}") for topic in interests]
+        refined_news_stories = [refine_content_with_gpt(story) for story in news_stories]
+        
+        # Fetch music playlist based on vibe
+        playlist_raw = call_perplexity_api(f"music playlist for vibe {vibe}")
+        playlist = refine_content_with_gpt(playlist_raw)
 
-    st.success('Done!')
+    st.success('Here’s what we found for you!')
     
     st.subheader('Your Personalized Horoscope')
     st.write(horoscope)
 
-    if news_stories:
+    if refined_news_stories:
         st.subheader('Latest News For You')
-        for story in news_stories:
+        for story in refined_news_stories:
             st.write(story)
     
     st.subheader('Your Music Playlist Recommendations')
-    st.write(music_playlist)
+    st.write(playlist)
