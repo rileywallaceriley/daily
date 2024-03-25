@@ -10,7 +10,7 @@ openai_api_key = st.secrets["openai"]["api_key"]
 openai.api_key = openai_api_key
 
 def call_perplexity_api(topic):
-    url = 'https://api.perplexity.ai/v1/chat/completions'
+    url = 'https://api.perplexity.ai/chat/completions'
     headers = {
         'Authorization': f'Bearer {perplexity_api_key}',
         'Content-Type': 'application/json',
