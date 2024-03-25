@@ -16,7 +16,7 @@ def call_perplexity_api(topic):
         'Accept': 'application/json'
     }
     payload = {
-        "model": "pplx-70b-online",
+        "model": "sonar-medium-online",
         "messages": [
             {"role": "system", "content": "Be precise and concise."},
             {"role": "user", "content": topic}
