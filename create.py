@@ -2,11 +2,11 @@ import streamlit as st
 import requests
 import openai
 
-# Setup for API keys from Streamlit's secrets
+# Assuming API keys are stored in Streamlit's secrets
 perplexity_api_key = st.secrets["perplexity"]["api_key"]
 openai_api_key = st.secrets["openai"]["api_key"]
 
-# Setting the OpenAI API key
+# Setting the OpenAI API key for later use
 openai.api_key = openai_api_key
 
 def call_perplexity_api(topic):
@@ -14,10 +14,10 @@ def call_perplexity_api(topic):
     headers = {
         'Authorization': f'Bearer {perplexity_api_key}',
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
     }
     payload = {
-        "model": "sonar-medium-online",
+        "model": "sonar-medium-online",  # Using the specified model for your queries
         "messages": [
             {"role": "system", "content": "You're a knowledgeable assistant tasked with providing detailed news stories and playlists including source links."},
             {"role": "user", "content": topic}
@@ -53,12 +53,9 @@ with st.form("user_input"):
 
 if submitted:
     with st.spinner('Fetching your personalized content...'):
-        # Fetch news
         news_content = call_perplexity_api(f"latest news about {topic} including source links")
-        # Fetch playlist
         playlist_content = call_perplexity_api(f"music playlist suggestions for a {vibe} vibe including source links")
         
-        # Refine content with GPT-4 for readability
         refined_news = refine_content_with_gpt(news_content)
         refined_playlist = refine_content_with_gpt(playlist_content)
 
