@@ -29,21 +29,6 @@ def call_perplexity_api(topic):
     else:
         return f"Failed with status code {response.status_code}: {response.text}"
 
-def fetch_news():
-    # Websites to fetch news from
-    websites = [
-        "https://hiphopdx.com/news/",
-        "https://mashable.com/",
-        "https://www.theverge.com/",
-        "https://futurism.com/the-byte",
-        "https://www.positive.news/"
-    ]
-    news_items = []
-    for site in websites:
-        news = call_perplexity_api(f"fetch the top stories from {site}")
-        news_items.extend(news.split('\n')[:2])  # Assuming the API returns a list of news items separated by newlines
-    return news_items
-
 def refine_content_with_gpt(content):
     try:
         response = openai.ChatCompletion.create(
@@ -68,12 +53,13 @@ with st.form("user_input"):
 
 if submitted:
     with st.spinner('Fetching your personalized content...'):
+        # Assuming we replace general news fetching with specific source handling in call_perplexity_api
         horoscope_content = call_perplexity_api(f"horoscope for {astro_sign} in a motivational tone")
-        news_content = fetch_news()
-        playlist_content = call_perplexity_api(f"music playlist suggestions for a {vibe} vibe including source links")
+        news_content = call_perplexity_api("fetch top news")  # This needs to be adjusted to your specific implementation
+        playlist_content = call_perplexity_api(f"music playlist suggestions for a {vibe} vibe")
         
         refined_horoscope = refine_content_with_gpt(horoscope_content)
-        refined_news = refine_content_with_gpt('\n'.join(news_content))
+        refined_news = refine_content_with_gpt(news_content)
         refined_playlist = refine_content_with_gpt(playlist_content)
 
     st.success('Content fetched successfully!')
@@ -85,4 +71,7 @@ if submitted:
     st.write(refined_news)
 
     st.subheader('Music Playlist Suggestions')
-    st.write(refined_playlist)
+    # Processing playlist suggestions to format as YouTube search links
+    playlist_links = [f"https://www.youtube.com/results?search_query={song.replace(' ', '+')}" for song in refined_playlist.split('\n')]
+    for link in playlist_links:
+        st.write(link)
