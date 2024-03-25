@@ -17,7 +17,7 @@ def call_perplexity_api(topic):
         'Accept': 'application/json',
     }
     payload = {
-        "model": "sonar-medium-online",  # Using the specified model for your queries
+        "model": "sonar-medium-online",
         "messages": [
             {"role": "system", "content": "You're a knowledgeable assistant tasked with providing detailed news stories and playlists including source links."},
             {"role": "user", "content": topic}
@@ -28,6 +28,21 @@ def call_perplexity_api(topic):
         return response.json()['choices'][0]['message']['content']
     else:
         return f"Failed with status code {response.status_code}: {response.text}"
+
+def fetch_news():
+    # Websites to fetch news from
+    websites = [
+        "https://hiphopdx.com/news/",
+        "https://mashable.com/",
+        "https://www.theverge.com/",
+        "https://futurism.com/the-byte",
+        "https://www.positive.news/"
+    ]
+    news_items = []
+    for site in websites:
+        news = call_perplexity_api(f"fetch the top stories from {site}")
+        news_items.extend(news.split('\n')[:2])  # Assuming the API returns a list of news items separated by newlines
+    return news_items
 
 def refine_content_with_gpt(content):
     try:
@@ -43,23 +58,28 @@ def refine_content_with_gpt(content):
         return f"An error occurred: {str(e)}"
 
 # Streamlit app layout
-st.title('Your Daily Digest and Playlist Generator')
+st.title('Your Daily Digest, Horoscope, and Playlist Generator')
 
 with st.form("user_input"):
     name = st.text_input("Name", help="What's your name?")
-    topic = st.text_input("News Topic", help="Enter a topic to get the latest news.")
+    astro_sign = st.selectbox("Astrological Sign", ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"], help="Choose your astrological sign for a personalized horoscope.")
     vibe = st.text_input("Vibe", help="Describe the vibe for your music playlist.")
     submitted = st.form_submit_button("Submit")
 
 if submitted:
     with st.spinner('Fetching your personalized content...'):
-        news_content = call_perplexity_api(f"latest news about {topic} including source links")
+        horoscope_content = call_perplexity_api(f"horoscope for {astro_sign} in a motivational tone")
+        news_content = fetch_news()
         playlist_content = call_perplexity_api(f"music playlist suggestions for a {vibe} vibe including source links")
         
-        refined_news = refine_content_with_gpt(news_content)
+        refined_horoscope = refine_content_with_gpt(horoscope_content)
+        refined_news = refine_content_with_gpt('\n'.join(news_content))
         refined_playlist = refine_content_with_gpt(playlist_content)
 
     st.success('Content fetched successfully!')
+    
+    st.subheader('Your Personalized Horoscope')
+    st.write(refined_horoscope)
     
     st.subheader('Latest News')
     st.write(refined_news)
