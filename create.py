@@ -29,16 +29,19 @@ def call_perplexity_api(topic):
         return f"Failed with status code {response.status_code}: {response.text}"
 
 def refine_content_with_gpt(raw_content):
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=f"Refine and format this content: \"{raw_content}\"",
-        temperature=0.5,
-        max_tokens=150,
-        top_p=1.0,
-        frequency_penalty=0.0,
-        presence_penalty=0.0
-    )
-    return response.choices[0].text.strip()
+    try:
+        response = openai.Completion.create(
+            engine="text-davinci-004",  # Updated to GPT-4 engine
+            prompt=f"Refine and format this content: \"{raw_content}\"",
+            temperature=0.5,
+            max_tokens=150,
+            top_p=1.0,
+            frequency_penalty=0.0,
+            presence_penalty=0.0
+        )
+        return response.choices[0].text.strip()
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
 
 # Streamlit app layout
 st.title('Your Daily Digest and Playlist')
