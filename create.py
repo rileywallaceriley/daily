@@ -66,7 +66,6 @@ if st.button("Discover Songs"):
             # Displaying each song detail followed by the raw YouTube URL
             st.write(f"Title: {title}")
             st.write(f"Artist: {artist}")
-            st.write(f"Year: {year}")
             st.write("Click here to listen:", youtube_url)
         else:
             st.write("Missing some information for a song.")
