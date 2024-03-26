@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import openai
+from datetime import datetime
 
 # Assuming API keys are stored in Streamlit's secrets
 perplexity_api_key = st.secrets["perplexity"]["api_key"]
@@ -10,37 +11,16 @@ openai_api_key = st.secrets["openai"]["api_key"]
 openai.api_key = openai_api_key
 
 def call_perplexity_api(topic):
-    url = 'https://api.perplexity.ai/chat/completions'
-    headers = {
-        'Authorization': f'Bearer {perplexity_api_key}',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-    }
-    payload = {
-        "model": "sonar-medium-online",
-        "messages": [
-            {"role": "system", "content": "You're a knowledgeable assistant tasked with providing detailed news stories and playlists including source links."},
-            {"role": "user", "content": topic}
-        ]
-    }
-    response = requests.post(url, headers=headers, json=payload)
-    if response.status_code == 200:
-        return response.json()['choices'][0]['message']['content']
-    else:
-        return f"Failed with status code {response.status_code}: {response.text}"
+    # Placeholder for your existing Perplexity API call
+    pass
 
 def refine_content_with_gpt(content):
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4-0125-preview",
-            messages=[
-                {"role": "system", "content": "You are an AI who formats provided content into a concise, readable format for web display, ensuring to retain all original details and links."},
-                {"role": "user", "content": content}
-            ]
-        )
-        return response['choices'][0]['message']['content'].strip()
-    except Exception as e:
-        return f"An error occurred: {str(e)}"
+    # Placeholder for your existing GPT-3 refinement function
+    pass
+
+def fetch_current_date():
+    # Fetch and format the current date
+    return datetime.now().strftime("%B %d, %Y")
 
 # Streamlit app layout
 st.title('Your Daily Digest, Horoscope, and Playlist Generator')
@@ -48,30 +28,36 @@ st.title('Your Daily Digest, Horoscope, and Playlist Generator')
 with st.form("user_input"):
     name = st.text_input("Name", help="What's your name?")
     astro_sign = st.selectbox("Astrological Sign", ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"], help="Choose your astrological sign for a personalized horoscope.")
-    vibe = st.text_input("Vibe", help="Describe the vibe for your music playlist.")
     submitted = st.form_submit_button("Submit")
 
 if submitted:
-    with st.spinner('Fetching your personalized content...'):
-        # Assuming we replace general news fetching with specific source handling in call_perplexity_api
-        horoscope_content = call_perplexity_api(f"horoscope for {astro_sign} in a motivational tone")
-        news_content = call_perplexity_api("fetch top news")  # This needs to be adjusted to your specific implementation
-        playlist_content = call_perplexity_api(f"music playlist suggestions for a {vibe} vibe")
-        
-        refined_horoscope = refine_content_with_gpt(horoscope_content)
-        refined_news = refine_content_with_gpt(news_content)
-        refined_playlist = refine_content_with_gpt(playlist_content)
-
-    st.success('Content fetched successfully!')
+    current_date = fetch_current_date()
+    # Simulated horoscope content
+    horoscope_content = f"Horoscope for {astro_sign} - {current_date}\n\nYour inspiring message here..."
     
+    # Simulated playlist content based on astrological sign
+    # Ideally, this would be dynamically generated based on user input and real data
+    playlist_content = {
+        "Aquarius": [
+            {"title": "Imagine", "artist": "John Lennon", "description": "An anthem for peace."},
+            {"title": "Revolution", "artist": "The Beatles", "description": "Captures your desire for change."},
+            # Add more songs as needed
+        ]
+    }.get(astro_sign, [])
+    
+    # Display the horoscope
     st.subheader('Your Personalized Horoscope')
-    st.write(refined_horoscope)
+    st.write(horoscope_content)
     
-    st.subheader('Latest News')
-    st.write(refined_news)
+    # Display the playlist
+    st.subheader(f'Playlist for {astro_sign}')
+    for song in playlist_content:
+        st.write(f"{song['title']} by {song['artist']} - {song['description']}")
+        youtube_search_query = "+".join([song['title'], song['artist']]).replace(" ", "+")
+        st.markdown(f"[Listen on YouTube](https://www.youtube.com/results?search_query={youtube_search_query})")
 
-    st.subheader('Music Playlist Suggestions')
-    # Processing playlist suggestions to format as YouTube search links
-    playlist_links = [f"https://www.youtube.com/results?search_query={song.replace(' ', '+')}" for song in refined_playlist.split('\n')]
-    for link in playlist_links:
-        st.write(link)
+    # Simulated news content
+    # In a real application, this section would fetch and display news from your preferred sources
+    st.subheader('Latest News')
+    st.write("News item 1: Detailed description here...")
+    st.write("News item 2: Detailed description here...")
