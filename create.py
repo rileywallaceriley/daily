@@ -9,65 +9,45 @@ openai_api_key = st.secrets["openai"]["api_key"]
 
 openai.api_key = openai_api_key
 
+def generate_youtube_search_url(query):
+    base_url = "https://www.youtube.com/results?search_query="
+    query = urllib.parse.quote(query)
+    return base_url + query
+
+def process_and_display_songs(response_text):
+    """
+    Processes the AI's text response to extract song details and display them with YouTube URLs.
+    Adjust this logic based on the actual format of your AI's response.
+    """
+    songs = response_text.split('\n')  # Assuming each song detail is on a new line
+    for song in songs:
+        if song.strip():  # Ensure it's not an empty line
+            # Directly use the song string as the search query
+            youtube_url = generate_youtube_search_url(song)
+            st.markdown(f"- {song} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
+
 def call_perplexity_api(input_text):
-    """
-    Use Perplexity for identifying songs based on samples.
-    """
-    url = 'https://api.perplexity.ai/chat/completions'
-    headers = {
-        'Authorization': f'Bearer {perplexity_api_key}',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-    }
-    payload = {
-        "model": "sonar-medium-online",
-        "messages": [
-            {"role": "system", "content": "You're a knowledgeable assistant tasked with providing detailed information on songs that sample another song."},
-            {"role": "user", "content": f"Which songs sample '{input_text}'?"}
-        ]
-    }
-    response = requests.post(url, headers=headers, json=payload)
-    if response.status_code == 200:
-        return response.json()['choices'][0]['message']['content']
-    else:
-        return "Failed to fetch recommendations due to an error."
+    # Your existing Perplexity API call logic
 
 def generate_gpt_playlist(vibe):
-    """
-    Leverage a GPT-4 chat model for generating a playlist based on the specified vibe.
-    This function uses the `v1/chat/completions` endpoint suitable for chat models.
-    """
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4-0125-preview",  # Adjust with your GPT-4 chat model identifier
-            messages=[
-                {"role": "system", "content": "You are a highly creative AI, familiar with music across genres. Generate a playlist based on a given vibe, including song titles, artists, and YouTube links."},
-                {"role": "user", "content": f"Create a playlist for the vibe: '{vibe}'."}
-            ]
-        )
-        return response.choices[0].message['content'].strip()
-    except Exception as e:
-        return f"An error occurred: {str(e)}"
-        
-# Streamlit UI
-st.title('Music Exploration Assistant')
+    # Your existing GPT playlist generation logic
 
+# Streamlit UI setup
 option = st.selectbox("Choose your option:", ["Sample Train", "Vibe"], index=1)
 input_text = st.text_input("Enter a source song or describe your vibe:")
 
-if st.button("Discover Songs"):
+if st.button("Vibes"):
     if not input_text:
         st.warning("Please enter the required information.")
     else:
-        if option == "Sample Train":
-            with st.spinner('Fetching songs based on sample...'):
+        with st.spinner('Fetching songs...'):
+            if option == "Sample Train":
                 result = call_perplexity_api(input_text)
-        else:  # Vibe
-            with st.spinner('Generating a vibe playlist...'):
+            else:  # Vibe
                 result = generate_gpt_playlist(input_text)
                 
-        if result:
-            st.success('Here are your recommendations:')
-            st.write(result)
-        else:
-            st.error("Unable to fetch recommendations. Please try again later or modify your input.")
+            if result:
+                st.success('Here are your vibes 😎:')
+                process_and_display_songs(result)
+            else:
+                st.error("Unable to fetch recommendations. Please try again later or modify your input.")
