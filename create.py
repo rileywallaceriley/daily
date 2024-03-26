@@ -14,32 +14,34 @@ openai_api_key = st.secrets["openai"]["api_key"]
 openai.api_key = openai_api_key
 
 def generate_youtube_search_url(song_title, artist):
-    """Generates a YouTube search URL for the given song title and artist."""
+    """Generates a YouTube search URL."""
     query = f"{song_title} {artist}"
     base_url = "https://www.youtube.com/results?search_query="
     return base_url + urllib.parse.quote(query)
 
 def display_song_with_link(song_title, artist):
-    """Displays a song title and artist with a link to search the song on YouTube."""
+    """Displays a song title and artist with a YouTube link."""
     youtube_url = generate_youtube_search_url(song_title, artist)
     st.markdown(f"**{song_title} by {artist}** [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
 
 def generate_gpt_playlist_for_vibe(vibe):
-    """Generates a playlist for a given vibe using the specified GPT-4 model."""
+    """Generates a playlist for a vibe."""
     try:
         response = openai.ChatCompletion.create(
             model="gpt-4-0125-preview",
             messages=[
-                {"role": "system", "content": "Generate a playlist for the given vibe, including song titles and artists."},
+                {"role": "system", "content": "Generate a playlist including song titles and artists."},
                 {"role": "user", "content": vibe}
             ]
         )
-        return response.choices[0].message['content'].strip()
+        playlist_response = response.choices[0].message['content'].strip()
+        st.text(playlist_response)  # Debug: print the raw GPT-4 response
+        return playlist_response
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
         return None
 
-# UI setup for option selection and input
+# Streamlit UI
 option = st.selectbox("Choose your option:", ["Sample Train", "Vibe"], index=1)
 input_text = st.text_input("Enter a source song or describe your vibe:")
 
@@ -51,15 +53,17 @@ if st.button("Discover Songs"):
         if option == "Vibe":
             with st.spinner('Generating a vibe playlist...'):
                 result = generate_gpt_playlist_for_vibe(input_text)
-        # Implement logic for "Sample Train" using Perplexity, similar to "Vibe"
 
         if result:
             st.success('Here are your recommendations:')
-            for line in result.split('\n'):
-                if ' by ' in line:  # Basic format check for "Title by Artist"
-                    song_title, artist = line.split(' by ', 1)
+            songs = result.split('\n')
+            for song in songs:
+                parts = song.split(' by ')
+                if len(parts) >= 2:
+                    song_title, artist = parts[0], parts[1]
                     display_song_with_link(song_title, artist)
                 else:
-                    st.write("Song format not recognized.")
+                    # This message helps identify lines that don't match the expected format.
+                    st.write(f"Song format not recognized for: {song}")
         else:
             st.error("Unable to fetch recommendations. Please try again later or modify your input.")
