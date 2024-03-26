@@ -19,29 +19,31 @@ def generate_youtube_search_url(song_title, artist=""):
     return base_url + urllib.parse.quote(query)
 
 def display_song_with_link(song_detail):
-    """Displays song details with a YouTube link, handling various formats."""
-    # Attempt to remove enumeration (e.g., "1. ") and handle "feat." if present
-    song_info = re.sub(r'^\d+\.\s*', '', song_detail).split(' - ', 1)
-    if len(song_info) == 2:
-        song_title, artist_info = song_info
-        youtube_url = generate_youtube_search_url(song_title, artist_info.split(' feat.')[0])  # Removes featured artists for search
-        st.markdown(f"**{song_title}** by {artist_info} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
+    """Displays song details with a YouTube link or regular text for non-song lines."""
+    # Attempt to identify song lines based on expected pattern
+    if " - " in song_detail:
+        song_info = re.sub(r'^\d+\.\s*', '', song_detail).split(' - ', 1)
+        if len(song_info) == 2:
+            song_title, artist_info = song_info
+            youtube_url = generate_youtube_search_url(song_title, artist_info.split(' feat.')[0])  # Removes featured artists for search
+            st.markdown(f"**{song_title}** by {artist_info} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
+        else:
+            st.error(f"Unable to parse song detail: {song_detail}")
     else:
-        st.error(f"Unable to parse song detail: {song_detail}")
+        # Display as regular text for intro/outro or non-song lines
+        st.write(song_detail)
 
-# Sample UI setup for vibe playlist generation (Assuming a function to generate playlist exists)
+# UI setup for option selection and input (Placeholder for actual GPT call implementation)
 input_text = st.text_input("Enter a vibe:")
 
 if st.button("Generate Playlist"):
     if not input_text:
-        st.warning("Please enter a vibe to generate playlist.")
+        st.warning("Please enter a vibe to generate a playlist.")
     else:
-        # Assuming a function `generate_gpt_playlist_for_vibe(vibe)` exists and returns a string of songs
-        playlist = generate_gpt_playlist_for_vibe(input_text)  # Placeholder for actual GPT call
+        playlist = "Your function to fetch playlist from GPT-4"  # Placeholder for actual GPT call
         if playlist:
-            st.success('Here are your recommendations:')
+            st.success('Playlist Generated:')
             for line in playlist.split('\n'):
-                if line.strip():  # Check if line is not empty
-                    display_song_with_link(line)
+                display_song_with_link(line.strip())
         else:
             st.error("Unable to fetch recommendations. Please try again.")
