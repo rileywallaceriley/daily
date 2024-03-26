@@ -1,7 +1,12 @@
-# Display the header image at the top of the app
+import streamlit as st
+import urllib.parse
+import requests
+import openai
+
+# Display the header image
 st.image("https://i.ibb.co/k6cychT/5-C4-FF130-FFD7-4860-B75-F-B442-EB296911.jpg")
 
-# Assuming API keys are stored in Streamlit's secrets for security
+# API keys stored in Streamlit's secrets for security
 perplexity_api_key = st.secrets["perplexity"]["api_key"]
 openai_api_key = st.secrets["openai"]["api_key"]
 
@@ -12,17 +17,12 @@ def generate_youtube_search_url(song_title, artist=""):
     """Generates a YouTube search URL for a given song title and artist."""
     query = f"{song_title} {artist}".strip()
     base_url = "https://www.youtube.com/results?search_query="
-    return base_url + urllib.parse.quote(query)
+    return base_url + urllib.parse.quote_plus(query)
 
-def display_song_with_link(line):
+def display_song_with_link(song_title, artist):
     """Displays a song title and artist with a link to search the song on YouTube."""
-    song_info = line.split(' - ')
-    if len(song_info) >= 2:
-        song_title, artist = song_info[0], ' - '.join(song_info[1:])
-        youtube_url = generate_youtube_search_url(song_title, artist)
-        st.markdown(f"**{song_title} by {artist}** [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
-    else:
-        st.write(line)  # For non-song lines or when unable to parse song details
+    youtube_url = generate_youtube_search_url(song_title, artist)
+    st.markdown(f"**{song_title} by {artist}** [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
 
 def generate_gpt_playlist_for_vibe(vibe):
     """Generates a playlist for a given vibe using GPT-4."""
@@ -34,50 +34,54 @@ def generate_gpt_playlist_for_vibe(vibe):
                 {"role": "user", "content": vibe}
             ]
         )
-        return response.choices[0].message['content'].strip()
+        playlist_content = response.choices[0].message['content'].strip()
+        st.success('Here are your recommendations:')
+        for line in playlist_content.split('\n'):
+            if ' - ' in line:
+                parts = line.split(' - ')
+                if len(parts) >= 2:
+                    song_title, artist = parts[0], parts[1]
+                    display_song_with_link(song_title, artist)
+            else:
+                st.write(line)  # Handle contextual or descriptive lines
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
-        return None
 
-def call_perplexity_api_for_samples(topic):
-    """Calls the Perplexity API to identify songs that sample another song."""
-    headers = {
-        'Authorization': f'Bearer {perplexity_api_key}',
-        'Content-Type': 'application/json',
-    }
+def fetch_samples_with_perplexity(song_title):
+    """Fetches sample information for a song using Perplexity."""
+    headers = {'Authorization': f'Bearer {perplexity_api_key}', 'Content-Type': 'application/json'}
     payload = {
         "model": "mistral-7b-instruct",
         "messages": [
-            {"role": "system", "content": "Be precise and concise."},
-            {"role": "user", "content": topic}
+            {"role": "system", "content": "Identify songs that sample this track, including titles and artists."},
+            {"role": "user", "content": song_title}
         ]
     }
-    response = requests.post('https://api.perplexity.ai/chat/completions', headers=headers, json=payload)
+    response = requests.post('https://api.perplexity.ai/v1/chat/completions', headers=headers, json=payload)
     if response.status_code == 200:
-        return response.json()['choices'][0]['message']['content']
+        sample_info = response.json()['choices'][0]['message']['content']
+        st.success('Here are the samples found:')
+        for line in sample_info.split('\n'):
+            if ' - ' in line:
+                parts = line.split(' - ')
+                if len(parts) >= 2:
+                    song_title, artist = parts[0].strip(), parts[1].strip()
+                    display_song_with_link(song_title, artist)
+            else:
+                st.write(line)  # For non-song lines or when unable to parse details
     else:
-        return f"Failed with status code {response.status_code}: {response.text}"
+        st.error("Failed to fetch samples: " + response.text)
 
-# UI setup for input and button to generate playlist or identify samples
+# UI setup for input and option selection
 option = st.selectbox("Choose your option:", ["Sample Train", "Vibe"], index=1)
 input_text = st.text_input("Enter a source song or describe your vibe:")
 
 if st.button("Discover Songs"):
     if not input_text:
         st.warning("Please enter the required information.")
-    else:
-        result = None
-        if option == "Vibe":
-            with st.spinner('Generating a vibe playlist...'):
-                result = generate_gpt_playlist_for_vibe(input_text)
-        elif option == "Sample Train":
-            with st.spinner('Identifying sample-based songs...'):
-                result = call_perplexity_api_for_samples(input_text)
-
-        if result:
-            st.success('Here are your recommendations:')
-            for line in result.split('\n'):
-                if line.strip():  # Check if line is not empty
-                    display_song_with_link(line.strip())
-        else:
-            st.error("Unable to fetch recommendations. Please try again.")
+    elif option == "Vibe":
+        with st.spinner('Generating a vibe playlist...'):
+            generate_gpt_playlist_for_vibe(input_text)
+    elif option == "Sample Train":
+        with st.spinner('Identifying sample-based songs...'):
+            fetch_samples_with_perplexity(input_text)
