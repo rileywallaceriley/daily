@@ -15,39 +15,27 @@ def generate_youtube_search_url(query):
     return base_url + query
 
 def process_and_display_songs(response_text):
-    """
-    Processes the AI's text response to extract song details and display them with YouTube URLs.
-    Adjust this logic based on the actual format of your AI's response.
-    """
     songs = response_text.split('\n')  # Assuming each song detail is on a new line
     for song in songs:
         if song.strip():  # Ensure it's not an empty line
-            # Directly use the song string as the search query
             youtube_url = generate_youtube_search_url(song)
             st.markdown(f"- {song} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
 
 def call_perplexity_api(input_text):
-    # Your existing Perplexity API call logic
+    # Implementation of your call_perplexity_api function goes here
+    pass  # Replace 'pass' with your actual implementation
 
 def generate_gpt_playlist(vibe):
-    # Your existing GPT playlist generation logic
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4-0125-preview",  # Use the appropriate GPT model
+            messages=[
+                {"role": "system", "content": "You are a highly creative AI, familiar with music across genres. Generate a playlist based on a given vibe, including song titles, artists, and YouTube links."},
+                {"role": "user", "content": f"Create a playlist for the vibe: '{vibe}'."}
+            ]
+        )
+        return response.choices[0].message['content'].strip()
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
 
-# Streamlit UI setup
-option = st.selectbox("Choose your option:", ["Sample Train", "Vibe"], index=1)
-input_text = st.text_input("Enter a source song or describe your vibe:")
-
-if st.button("Vibes"):
-    if not input_text:
-        st.warning("Please enter the required information.")
-    else:
-        with st.spinner('Fetching songs...'):
-            if option == "Sample Train":
-                result = call_perplexity_api(input_text)
-            else:  # Vibe
-                result = generate_gpt_playlist(input_text)
-                
-            if result:
-                st.success('Here are your vibes 😎:')
-                process_and_display_songs(result)
-            else:
-                st.error("Unable to fetch recommendations. Please try again later or modify your input.")
+# Streamlit UI setup and the rest of your script continues here...
