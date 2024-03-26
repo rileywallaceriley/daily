@@ -34,20 +34,18 @@ def call_perplexity_api(input_text):
 
 def generate_gpt_playlist(vibe):
     """
-    Leverage GPT-4 for generating vibe-based playlists, including YouTube links.
-    Adjust the engine parameter to match the specific GPT-4 model you have access to.
+    Leverage a GPT-4 chat model for generating a playlist based on the specified vibe.
+    This function uses the `v1/chat/completions` endpoint suitable for chat models.
     """
     try:
-        response = openai.Completion.create(
-            engine="gpt-4-0125-preview",  # Adjust to the specific GPT-4 model you're using
-            prompt=f"Create a playlist for the vibe: '{vibe}'. Include song titles, artists, and YouTube links.",
-            temperature=0.7,
-            max_tokens=500,
-            top_p=1.0,
-            frequency_penalty=0.0,
-            presence_penalty=0.0
+        response = openai.ChatCompletion.create(
+            model="gpt-4-0125-preview",  # Adjust with your GPT-4 chat model identifier
+            messages=[
+                {"role": "system", "content": "You are a highly creative AI, familiar with music across genres. Generate a playlist based on a given vibe, including song titles, artists, and YouTube links."},
+                {"role": "user", "content": f"Create a playlist for the vibe: '{vibe}'."}
+            ]
         )
-        return response.choices[0].text.strip()
+        return response.choices[0].message['content'].strip()
     except Exception as e:
         return f"An error occurred: {str(e)}"
         
