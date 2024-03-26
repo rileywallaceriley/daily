@@ -15,23 +15,22 @@ openai.api_key = openai_api_key
 
 def generate_youtube_search_url(song_title, artist):
     """Generates a YouTube search URL for the given song title and artist."""
-    query = f"{song_title} {artist}"  # Combine song title and artist for the query
+    query = f"{song_title} {artist}"
     base_url = "https://www.youtube.com/results?search_query="
     return base_url + urllib.parse.quote(query)
 
-def display_song_with_brief_and_link(song_title, artist, brief):
-    """Displays a song title, artist, a brief description, and a YouTube link."""
+def display_song_with_link(song_title, artist):
+    """Displays a song title and artist with a link to search the song on YouTube."""
     youtube_url = generate_youtube_search_url(song_title, artist)
-    # Display song title and artist bolder and larger, followed by a brief and the YouTube link
-    st.markdown(f"**{song_title} by {artist}** - {brief} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
+    st.markdown(f"**{song_title} by {artist}** [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
 
 def generate_gpt_playlist_for_vibe(vibe):
     """Generates a playlist for a given vibe using the specified GPT-4 model."""
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4-0125-preview",  # Specified GPT-4 model
+            model="gpt-4-0125-preview",
             messages=[
-                {"role": "system", "content": "Generate a playlist for the given vibe, including song titles, artists, and a brief description for each."},
+                {"role": "system", "content": "Generate a playlist for the given vibe, including song titles and artists."},
                 {"role": "user", "content": vibe}
             ]
         )
@@ -52,17 +51,15 @@ if st.button("Discover Songs"):
         if option == "Vibe":
             with st.spinner('Generating a vibe playlist...'):
                 result = generate_gpt_playlist_for_vibe(input_text)
-        # For "Sample Train", implement similar logic as "Vibe" using Perplexity
+        # Implement logic for "Sample Train" using Perplexity, similar to "Vibe"
 
         if result:
             st.success('Here are your recommendations:')
             for line in result.split('\n'):
-                # Parsing each line for title, artist, and brief assuming a specific format
-                parts = line.split(' - ', 2)  # Splitting on ' - ' which separates the song from its brief
-                if len(parts) >= 3:
-                    song_title, artist, brief = parts[0], parts[1], parts[2]
-                    display_song_with_brief_and_link(song_title, artist, brief)
+                if ' by ' in line:  # Basic format check for "Title by Artist"
+                    song_title, artist = line.split(' by ', 1)
+                    display_song_with_link(song_title, artist)
                 else:
-                    st.write("Song format not recognized or brief missing.")
+                    st.write("Song format not recognized.")
         else:
             st.error("Unable to fetch recommendations. Please try again later or modify your input.")
