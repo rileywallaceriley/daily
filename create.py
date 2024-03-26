@@ -34,9 +34,17 @@ def generate_youtube_search_url(song_title, artist=""):
     return base_url + urllib.parse.quote_plus(query)
 
 def display_song_with_link(song_title, artist):
-    """Displays a song title and artist with a link to search the song on YouTube."""
-    youtube_url = generate_youtube_search_url(song_title, artist)
-    st.markdown(f"**{song_title} by {artist}** [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
+    """
+    Displays a song title and artist with a link to search the song on YouTube.
+    The search query will only include the main song title and the main artist.
+    """
+    # Splitting the artist string to only keep the main artist before any "featuring" (ft., feat., etc.)
+    main_artist = artist.split(' ft.')[0].split(' feat.')[0].split(',')[0].strip()
+    youtube_url = generate_youtube_search_url(song_title, main_artist)
+    
+    # Display the markdown without additional formatting (**)
+    st.markdown(f"{song_title} by {main_artist} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
+
 
 def generate_gpt_playlist(vibe, include_top_40, stay_super_random):
     """Generates a playlist based on the user's vibe and preferences using GPT-4."""
