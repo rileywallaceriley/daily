@@ -1,13 +1,24 @@
 import streamlit as st
-import urllib.parse
-import requests
 import openai
+import random
+import urllib.parse
+
+# Randomly select an image from the provided options
+image_urls = [
+    "https://i.ibb.co/BNHvHM0/684518-B3-B7-D0-45-D7-8801-2355-D70-D169-C.webp",
+    "https://i.ibb.co/LJQZ9s7/33540-C0-B-E7-DE-48-CC-AA39-64-BA2-E57-B264.jpg",
+    "https://i.ibb.co/gZ0wVhR/24-E8737-A-108-A-4-FB6-81-A8-34566-DA12-CCA.jpg",
+    "https://i.ibb.co/k6cychT/5-C4-FF130-FFD7-4860-B75-F-B442-EB296911.jpg"
+]
+selected_image = random.choice(image_urls)
 
 # Display the header image
-st.image("https://i.ibb.co/k6cychT/5-C4-FF130-FFD7-4860-B75-F-B442-EB296911.jpg")
+st.image(selected_image)
+
+# Contextual text under the image
+st.write("Welcome to Vibe Cat; give me your vibe (a song you love, a feeling, etc.) and I'll curate a great playlist.")
 
 # API keys stored in Streamlit's secrets for security
-perplexity_api_key = st.secrets["perplexity"]["api_key"]
 openai_api_key = st.secrets["openai"]["api_key"]
 
 # Set the OpenAI API key for usage in calls to GPT-4
@@ -24,77 +35,39 @@ def display_song_with_link(song_title, artist):
     youtube_url = generate_youtube_search_url(song_title, artist)
     st.markdown(f"**{song_title} by {artist}** [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
 
-def generate_gpt_playlist_for_vibe(vibe):
-    """Generates a playlist for a given vibe using GPT-4."""
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4-0125-preview",
-            messages=[
-                {"role": "system", "content": "Generate a playlist including song titles and artists based on the given vibe."},
-                {"role": "user", "content": vibe}
-            ]
-        )
-        playlist_content = response.choices[0].message['content'].strip()
-        st.success('Here are your recommendations:')
-        for line in playlist_content.split('\n'):
-            if ' - ' in line:
-                parts = line.split(' - ')
-                if len(parts) >= 2:
-                    song_title, artist = parts[0].strip(), parts[1].strip()
-                    display_song_with_link(song_title, artist)
-            else:
-                st.write(line)  # Handle contextual or descriptive lines
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
-
-def fetch_samples_with_perplexity(song_title):
-    """Fetches sample information for a song using Perplexity API."""
-    headers = {
-        'Authorization': f'Bearer {perplexity_api_key}',
-        'Content-Type': 'application/json',
-    }
-    payload = {
-        "model": "mistral-7b-instruct",
-        "messages": [
-            {
-                "role": "system",
-                "content": "You are an AI knowledgeable about music samples."
-            },
-            {
-                "role": "user",
-                "content": f"songs sampled to make {song_title}"
-            }
+def generate_gpt_playlist(vibe, include_top_40, stay_super_random):
+    """Generates a playlist based on the user's vibe and preferences using GPT-4."""
+    prompt = f"Generate a playlist based on the vibe '{vibe}'."
+    if include_top_40:
+        prompt += " Include popular songs mixed with unknown ones."
+    if stay_super_random:
+        prompt += " Focus on b-sides, under-hailed gems, and otherwise underground music."
+        
+    response = openai.ChatCompletion.create(
+        model="gpt-4-0125-preview",  # Using the specified GPT model
+        messages=[
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": "Please generate the playlist."}
         ]
-    }
-    response = requests.post('https://api.perplexity.ai/v1/chat/completions', headers=headers, json=payload)
-    if response.status_code == 200:
-        sample_info = response.json()['choices'][0]['message']['content']
-        st.success('Here are the samples found:')
-        display_samples(sample_info)
-    else:
-        st.error(f"Failed to fetch samples: {response.status_code}, {response.text}")
-
-def display_samples(sample_info):
-    """Displays the sample information extracted from the Perplexity API response."""
-    for line in sample_info.split('\n'):
-        if ' - ' in line:  # Assuming the format is 'Song Title - Artist'
-            song_title, artist = line.split(' - ', 1)
-            youtube_url = generate_youtube_search_url(song_title.strip(), artist.strip())
-            st.markdown(f"**{song_title} by {artist}** [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
+    )
+    playlist_content = response.choices[0].message['content'].strip()
+    st.success('Here is your curated playlist:')
+    for line in playlist_content.split('\n'):
+        if ' - ' in line:
+            parts = line.split(' - ')
+            if len(parts) >= 2:
+                song_title, artist = parts[0].strip(), parts[1].strip()
+                display_song_with_link(song_title, artist)
         else:
-            st.write(line)  # For contextual or descriptive lines not matching the expected format
+            st.write(line)  # Handle contextual or descriptive lines
 
+# UI setup for input, checkboxes, and button to generate playlist
+input_text = st.text_input("Enter your vibe:")
+include_top_40 = st.checkbox("Include Top 40")
+stay_super_random = st.checkbox("Stay Super Random")
 
-# UI setup for input and option selection
-option = st.selectbox("Choose your option:", ["Sample Train", "Vibe"], index=1)
-input_text = st.text_input("Enter a source song or describe your vibe:")
-
-if st.button("Discover Songs"):
+if st.button("Curate Playlist"):
     if not input_text:
         st.warning("Please enter the required information.")
-    elif option == "Vibe":
-        with st.spinner('Generating a vibe playlist...'):
-            generate_gpt_playlist_for_vibe(input_text)
-    elif option == "Sample Train":
-        with st.spinner('Identifying sample-based songs...'):
-            fetch_samples_with_perplexity(input_text)
+    else:
+        generate_gpt_playlist(input_text, include_top_40, stay_super_random)
