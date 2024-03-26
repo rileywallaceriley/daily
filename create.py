@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import urllib.parse
 
-# Assuming API keys are stored in Streamlit's secrets
+# Assuming API keys are stored in Streamlit's secrets for security
 perplexity_api_key = st.secrets["perplexity"]["api_key"]
 
 def call_perplexity_api(option, input_text):
@@ -12,11 +12,12 @@ def call_perplexity_api(option, input_text):
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
-    query_content = "List songs based on '{}' with titles, artists, and years.".format(input_text) if option == "Vibe" else "List songs sampled in '{}' with titles, artists, and years.".format(input_text)
+    # Tailoring the query based on the selected option
+    query_content = f"List songs based on '{input_text}' with titles and artists." if option == "Vibe" else f"List songs sampled in '{input_text}' with titles and artists."
     payload = {
-        "model": "sonar-medium-online",  # Adjust according to the available models
+        "model": "sonar-medium-online",  # Utilize the specified model for queries
         "messages": [
-            {"role": "system", "content": "You're a knowledgeable assistant tasked with providing song titles, artists, and years."},
+            {"role": "system", "content": "You're a knowledgeable assistant tasked with providing song titles and artists."},
             {"role": "user", "content": query_content}
         ]
     }
@@ -24,7 +25,7 @@ def call_perplexity_api(option, input_text):
     if response.status_code == 200:
         return response.json()['choices'][0]['message']['content']
     else:
-        return "Failed with status code {}: {}".format(response.status_code, response.text)
+        return "Failed to fetch recommendations due to an error."
 
 def generate_youtube_search_url(song_title):
     base_url = "https://www.youtube.com/results?search_query="
@@ -44,15 +45,19 @@ if st.button("Discover Songs"):
         with st.spinner('Fetching songs...'):
             song_details = call_perplexity_api(option, input_text)
             
-            if song_details:
+            if song_details and song_details.startswith("Failed to fetch"):
+                st.error(song_details)  # Display the error message directly if any
+            elif song_details:
                 st.success('Check out these tunes!')
                 for detail in song_details.split('\n'):  # Assuming each song detail is separated by a newline
-                    if detail.strip():  # Check if the detail line is not empty
-                        # Assuming the title and artist are sufficient for YouTube search
-                        title, artist = detail.split(', ')[:2]  # Safely unpack first two elements
-                        youtube_url = generate_youtube_search_url(f"{title} {artist}")
-                        st.markdown("Title: **{}**".format(title))
-                        st.markdown("Artist: **{}**".format(artist))
-                        st.markdown("[Click here to listen]({})".format(youtube_url))
+                    if detail.strip():  # Ensures detail is not empty
+                        parts = detail.split(', ')
+                        if len(parts) >= 2:  # Expecting at least title and artist
+                            title, artist = parts[0], parts[1]
+                            youtube_url = generate_youtube_search_url(f"{title} {artist}")
+                            st.write(f"**Title:** {title}, **Artist:** {artist}")
+                            st.markdown(f"[Click here to listen]({youtube_url})", unsafe_allow_html=True)
+                        else:
+                            st.write("Missing some information for a song.")
             else:
-                st.error("Unable to fetch recommendations. Try tweaking your input.")
+                st.error("No recommendations found. Try a different query.")
