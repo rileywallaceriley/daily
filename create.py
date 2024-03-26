@@ -1,24 +1,29 @@
 import streamlit as st
 import requests
 import urllib.parse
+import openai
 
-# Assuming API keys are stored in Streamlit's secrets for security
+# Assuming API keys are stored in Streamlit's secrets
 perplexity_api_key = st.secrets["perplexity"]["api_key"]
+openai_api_key = st.secrets["openai"]["api_key"]
 
-def call_perplexity_api(option, input_text):
+openai.api_key = openai_api_key
+
+def call_perplexity_api(input_text):
+    """
+    Use Perplexity for identifying songs based on samples.
+    """
     url = 'https://api.perplexity.ai/chat/completions'
     headers = {
         'Authorization': f'Bearer {perplexity_api_key}',
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
-    # Tailoring the query based on the selected option
-    query_content = f"List songs based on '{input_text}' with titles and artists." if option == "Vibe" else f"List songs sampled in '{input_text}' with titles and artists."
     payload = {
-        "model": "sonar-medium-online",  # Utilize the specified model for queries
+        "model": "sonar-medium-online",
         "messages": [
-            {"role": "system", "content": "You're a knowledgeable assistant tasked with providing song titles and artists."},
-            {"role": "user", "content": query_content}
+            {"role": "system", "content": "You're a knowledgeable assistant tasked with providing detailed information on songs that sample another song."},
+            {"role": "user", "content": f"Which songs sample '{input_text}'?"}
         ]
     }
     response = requests.post(url, headers=headers, json=payload)
@@ -27,13 +32,25 @@ def call_perplexity_api(option, input_text):
     else:
         return "Failed to fetch recommendations due to an error."
 
-def generate_youtube_search_url(song_title, artist, year):
-    search_query = f"{song_title} {artist} {year}"  # Include year for more specificity
-    base_url = "https://www.youtube.com/results?search_query="
-    query = urllib.parse.quote(search_query)
-    return base_url + query
+def generate_gpt_playlist(vibe):
+    """
+    Leverage GPT for generating vibe-based playlists, including YouTube links.
+    """
+    try:
+        response = openai.Completion.create(
+            engine="text-davinci-003",
+            prompt=f"Create a playlist for the vibe: '{vibe}'. Include song titles, artists, and YouTube links.",
+            temperature=0.7,
+            max_tokens=500,
+            top_p=1.0,
+            frequency_penalty=0.0,
+            presence_penalty=0.0
+        )
+        return response.choices[0].text.strip()
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
 
-# Streamlit app layout
+# Streamlit UI
 st.title('Music Exploration Assistant')
 
 option = st.selectbox("Choose your option:", ["Sample Train", "Vibe"], index=1)
@@ -43,22 +60,15 @@ if st.button("Discover Songs"):
     if not input_text:
         st.warning("Please enter the required information.")
     else:
-        with st.spinner('Fetching songs...'):
-            song_details = call_perplexity_api(option, input_text)
-            
-            if song_details and song_details.startswith("Failed to fetch"):
-                st.error(song_details)  # Display the error message directly if any
-            elif song_details:
-                st.success('Check out these tunes!')
-                for detail in song_details.split('\n'):  # Assuming each song detail is separated by a newline
-                    if detail.strip():  # Ensures detail is not empty
-                        parts = detail.split(', ')
-                        if len(parts) >= 2:  # Expecting at least title and artist
-                            title, artist = parts[0], parts[1]
-                            youtube_url = generate_youtube_search_url(f"{title} {artist}")
-                            st.write(f"**Title:** {title}, **Artist:** {artist}")
-                            st.markdown(f"[Click here to listen]({youtube_url})", unsafe_allow_html=True)
-                        else:
-                            st.write("Missing some information for a song.")
-            else:
-                st.error("No recommendations found. Try a different query.")
+        if option == "Sample Train":
+            with st.spinner('Fetching songs based on sample...'):
+                result = call_perplexity_api(input_text)
+        else:  # Vibe
+            with st.spinner('Generating a vibe playlist...'):
+                result = generate_gpt_playlist(input_text)
+                
+        if result:
+            st.success('Here are your recommendations:')
+            st.write(result)
+        else:
+            st.error("Unable to fetch recommendations. Please try again later or modify your input.")
