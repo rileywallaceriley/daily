@@ -34,11 +34,12 @@ def call_perplexity_api(input_text):
 
 def generate_gpt_playlist(vibe):
     """
-    Leverage GPT for generating vibe-based playlists, including YouTube links.
+    Leverage GPT-4 for generating vibe-based playlists, including YouTube links.
+    Adjust the engine parameter to match the specific GPT-4 model you have access to.
     """
     try:
         response = openai.Completion.create(
-            engine="text-davinci-003",
+            engine="gpt-4-0125-preview",  # Adjust to the specific GPT-4 model you're using
             prompt=f"Create a playlist for the vibe: '{vibe}'. Include song titles, artists, and YouTube links.",
             temperature=0.7,
             max_tokens=500,
@@ -49,7 +50,7 @@ def generate_gpt_playlist(vibe):
         return response.choices[0].text.strip()
     except Exception as e:
         return f"An error occurred: {str(e)}"
-
+        
 # Streamlit UI
 st.title('Music Exploration Assistant')
 
