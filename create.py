@@ -51,7 +51,7 @@ def fetch_samples_with_perplexity(song_title):
     """Fetches sample information for a song using Perplexity."""
     headers = {'Authorization': f'Bearer {perplexity_api_key}', 'Content-Type': 'application/json'}
     payload = {
-        "model": "mistral-7b-instruct",
+        "model": "sonar-medium-online",
         "messages": [
             {"role": "system", "content": "Identify songs that sample this track, including titles and artists."},
             {"role": "user", "content": song_title}
