@@ -27,9 +27,10 @@ def call_perplexity_api(option, input_text):
     else:
         return "Failed to fetch recommendations due to an error."
 
-def generate_youtube_search_url(song_title):
+def generate_youtube_search_url(song_title, artist, year):
+    search_query = f"{song_title} {artist} {year}"  # Include year for more specificity
     base_url = "https://www.youtube.com/results?search_query="
-    query = urllib.parse.quote(song_title)
+    query = urllib.parse.quote(search_query)
     return base_url + query
 
 # Streamlit app layout
