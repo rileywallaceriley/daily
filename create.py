@@ -6,21 +6,17 @@ import urllib.parse
 perplexity_api_key = st.secrets["perplexity"]["api_key"]
 
 def call_perplexity_api(option, input_text):
-    """
-    Adjusted to ask Perplexity for detailed information.
-    """
     url = 'https://api.perplexity.ai/chat/completions'
     headers = {
         'Authorization': f'Bearer {perplexity_api_key}',
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
-    query_content = f"Provide detailed song recommendations based on '{input_text}'." if option == "Vibe" else f"List songs sampled in '{input_text}' with details."
-
+    query_content = f"List songs based on '{input_text}' with titles, artists, and years." if option == "Vibe" else f"List songs sampled in '{input_text}' with titles, artists, and years."
     payload = {
         "model": "sonar-medium-online",
         "messages": [
-            {"role": "system", "content": "You're tasked with providing detailed song recommendations including title, artist, producer, album, year, and a short blurb."},
+            {"role": "system", "content": "You're a knowledgeable assistant tasked with providing song titles, artists, and years."},
             {"role": "user", "content": query_content}
         ]
     }
@@ -36,47 +32,41 @@ def generate_youtube_search_url(song_title):
     return base_url + query
 
 def generate_intro(input_text, option):
-    """
-    Generates an engaging introduction in a knowledgeable tone.
-    """
-    base_intro = "Alright, let's dive into this journey through sound."
+    base_intro = "Alright, diving into this musical journey."
     if option == "Vibe":
-        return f"{base_intro} You're feeling '{input_text}', which is absolutely a vibe I can get behind. Here's a playlist that perfectly captures that essence. Each song is a little exploration into the mood you're seeking."
-    else:  # Sample Train
-        return f"{base_intro} Diving into the roots of '{input_text}' is like exploring a treasure map of music history. Here's a list showcasing the impact of this song across the soundscape. It's fascinating to see the ripples it created."
+        return f"{base_intro} Feeling '{input_text}' is the perfect prompt for discovering some tunes. Here's what aligns with your vibe:"
+    else:
+        return f"{base_intro} Exploring the tracks that sampled '{input_text}' opens up a fascinating sonic web. Check these out:"
 
 # Streamlit app layout
-st.title('Your Curated Music Experience')
+st.title('Music Exploration Assistant')
 
 option = st.selectbox("Choose your option:", ["Sample Train", "Vibe"], index=1)
 input_text = st.text_input("Enter a source song or describe your vibe:")
 
-if st.button("Generate Recommendations"):
+if st.button("Discover Songs"):
     if not input_text:
         st.warning("Please enter the required information.")
     else:
         intro = generate_intro(input_text, option)
         st.markdown(f"### {intro}")
         
-        with st.spinner('Fetching recommendations...'):
-            recommendations = call_perplexity_api(option, input_text)
+        with st.spinner('Fetching songs...'):
+            song_details = call_perplexity_api(option, input_text)
             
-            if recommendations:
-                st.success('Check out these tunes!')
-                # Example recommendation format handling
-                # This part needs adjustment based on the actual format of Perplexity's response
-                for rec in recommendations.split('\n\n'):  # Assuming each rec is separated by two newlines
-                    details, blurb = rec.split('\n', 1)  # Splitting details from the blurb
-                    title, artist, producer, album, year = details.split(', ')  # Example parsing
-                    youtube_url = generate_youtube_search_url(f"{title} {artist}")
-                    st.markdown(f"""
-                    **Title:** {title}  
-                    **Artist:** {artist}  
-                    **Producer:** {producer}  
-                    **Album:** {album}  
-                    **Year:** {year}  
-                    **About:** {blurb}  
-                    [Click here to listen]({youtube_url})
-                    """)
-            else:
-                st.error("Failed to fetch recommendations. Try tweaking your input.")
+            # Assuming song details are separated by a specific delimiter
+            for detail in song_details.split('\n'):  # Adjust based on the actual format of the response
+                if detail.strip():  # Check if the detail line is not empty
+                    # Simple parsing for title, artist, and year
+                    parts = detail.split(', ')
+                    if len(parts) >= 3:
+                        title, artist, year = parts[0], parts[1], parts[2]
+                        youtube_url = generate_youtube_search_url(f"{title} {artist}")
+                        st.markdown(f"""
+                        **Title:** {title}  
+                        **Artist:** {artist}  
+                        **Year:** {year}  
+                        [Click here to listen]({youtube_url})  
+                        """)
+                    else:
+                        st.write("Missing some information for a song.")
