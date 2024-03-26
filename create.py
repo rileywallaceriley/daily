@@ -3,8 +3,14 @@ import openai
 import random
 import urllib.parse
 
+def setup_page_layout():
+    """Setups up the page layout with a fixed intro."""
+    st.image(get_random_image())
+    st.write("Welcome to Vibe Cat; give me your vibe (a song you love, a feeling, etc.) and I'll curate a great playlist.")
+    # Feel free to customize the intro text further as needed.
+
 def get_random_image():
-    """Selects a random image only once per session."""
+    """Selects and displays a random image only once per session."""
     if 'image_url' not in st.session_state:
         image_urls = [
             "https://i.ibb.co/BNHvHM0/684518-B3-B7-D0-45-D7-8801-2355-D70-D169-C.webp",
@@ -41,26 +47,16 @@ def generate_gpt_playlist(vibe, include_top_40, stay_super_random):
             {"role": "user", "content": "Please generate the playlist."}
         ]
     )
-    playlist_content = response.choices[0].message['content'].strip()
-    st.success('Here is your curated playlist:')
-    for line in playlist_content.split('\n'):
-        if ' - ' in line:
-            parts = line.split(' - ')
-            if len(parts) >= 2:
-                song_title, main_artist = parts[0].strip(), parts[1].split(' ft.')[0].split(' feat.')[0].split(',')[0].strip()
-                display_song_with_link(song_title, main_artist)
-        else:
-            st.write(line)  # Handle contextual or descriptive lines
+    return response.choices[0].message['content'].strip()
 
-# Display the header image using session state
-st.image(get_random_image())
+# Display the header image and introductory text
+setup_page_layout()
 
-# Introductory text
-st.write("Welcome to Vibe Cat; give me your vibe (a song you love, a feeling, etc.) and I'll curate a great playlist.")
-
-# API keys and UI elements
+# API key stored in Streamlit's secrets for security
 openai_api_key = st.secrets["openai"]["api_key"]
 openai.api_key = openai_api_key
+
+# User inputs for vibe, preferences, and button to generate playlist
 input_text = st.text_input("Enter your vibe:")
 include_top_40 = st.checkbox("Include Top 40")
 stay_super_random = st.checkbox("Stay Super Random")
@@ -70,4 +66,12 @@ if st.button("Curate Playlist"):
         st.warning("Please enter the required information.")
     else:
         with st.spinner('Curating your playlist...'):
-            generate_gpt_playlist(input_text, include_top_40, stay_super_random)
+            playlist_content = generate_gpt_playlist(input_text, include_top_40, stay_super_random)
+            st.write("Here is your curated playlist:")
+            for line in playlist_content.split('\n'):
+                if ' - ' in line:
+                    parts = line.split(' - ')
+                    if len(parts) >= 2:
+                        song_title, main_artist = parts[0].strip(), parts[1].split(' ft.')[0].split(' feat.')[0].split(',')[0].strip()
+                        display_song_with_link(song_title, main_artist)
+            st.write("Enjoy your personalized playlist! Feel free to explore more vibes and curate more playlists.")
