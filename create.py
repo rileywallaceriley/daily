@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import urllib.parse
 
 # Assuming API keys are stored in Streamlit's secrets
 perplexity_api_key = st.secrets["perplexity"]["api_key"]
@@ -11,16 +12,15 @@ def call_perplexity_api(option, input_text):
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
-    # Adjusting the payload based on the user's choice
     if option == "Sample Train":
-        query_content = f"Give me a list of songs sampled in the song {input_text} with YouTube links."
+        query_content = f"List songs sampled in '{input_text}'. Provide song titles."
     else:  # Vibe
-        query_content = f"Based on feeling {input_text}, suggest a perfect playlist with YouTube links."
-    
+        query_content = f"Based on the vibe '{input_text}', list songs that fit. Provide song titles."
+
     payload = {
-        "model": "sonar-medium-online",
+        "model": "sonar-medium-online",  # Adjust model if necessary
         "messages": [
-            {"role": "system", "content": "You're a knowledgeable assistant tasked with providing detailed playlists including source links."},
+            {"role": "system", "content": "You're a knowledgeable assistant tasked with providing song titles."},
             {"role": "user", "content": query_content}
         ]
     }
@@ -30,23 +30,31 @@ def call_perplexity_api(option, input_text):
     else:
         return f"Failed with status code {response.status_code}: {response.text}"
 
+def generate_youtube_search_url(song_title):
+    base_url = "https://www.youtube.com/results?search_query="
+    query = urllib.parse.quote(song_title)
+    return base_url + query
+
 # Streamlit app layout
-st.title('Music Playlist Generator')
+st.title('Music Recommendation and YouTube Search Generator')
 
-# Dropdown for user to choose between Sample Train or Vibe
-option = st.selectbox("Choose your option:", ["Sample Train", "Vibe"])
+option = st.selectbox("Choose your option:", ["Sample Train", "Vibe"], index=1)
+input_text = st.text_input("Enter a source song or describe your vibe:")
 
-input_text = ""
-if option == "Sample Train":
-    input_text = st.text_input("Enter a source song:")
-elif option == "Vibe":
-    input_text = st.text_input("How are you feeling?")
-
-if st.button("Submit"):
+if st.button("Generate Recommendations"):
     if not input_text:
-        st.write("Please enter the required information.")
+        st.warning("Please enter the required information.")
     else:
-        with st.spinner('Fetching your personalized playlist...'):
-            playlist_content = call_perplexity_api(option, input_text)
-            st.success('Playlist fetched successfully!')
-            st.write(playlist_content)
+        with st.spinner('Fetching recommendations...'):
+            recommendations = call_perplexity_api(option, input_text)
+            st.success('Recommendations fetched successfully!')
+            st.write("Recommendations:")
+            st.write(recommendations)  # Display raw recommendations for context
+
+            # Assuming recommendations are separated by lines or a specific delimiter
+            songs = recommendations.split('\n')  # Adjust based on actual format
+            st.write("YouTube Search URLs:")
+            for song in songs:
+                if song.strip():  # Ensure the song title isn't empty
+                    url = generate_youtube_search_url(song.strip())
+                    st.markdown(f"[{song}]({url})", unsafe_allow_html=True)
