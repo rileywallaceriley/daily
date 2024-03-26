@@ -48,32 +48,42 @@ def generate_gpt_playlist_for_vibe(vibe):
         st.error(f"An error occurred: {str(e)}")
 
 def fetch_samples_with_perplexity(song_title):
-    """Fetches sample information for a song using Perplexity with the updated model and prompt."""
-    headers = {'Authorization': f'Bearer {perplexity_api_key}', 'Content-Type': 'application/json'}
+    """Fetches sample information for a song using Perplexity API."""
+    headers = {
+        'Authorization': f'Bearer {perplexity_api_key}',
+        'Content-Type': 'application/json',
+    }
     payload = {
-        "model": "sonar-medium-online",
+        "model": "mistral-7b-instruct",
         "messages": [
-            {"role": "system", "content": "You are an AI knowledgeable about music samples."},
-            {"role": "user", "content": f"songs sampled to make {song_title}"}
+            {
+                "role": "system",
+                "content": "You are an AI knowledgeable about music samples."
+            },
+            {
+                "role": "user",
+                "content": f"songs sampled to make {song_title}"
+            }
         ]
     }
     response = requests.post('https://api.perplexity.ai/v1/chat/completions', headers=headers, json=payload)
     if response.status_code == 200:
         sample_info = response.json()['choices'][0]['message']['content']
-        if sample_info.strip() and not "I'm not sure" in sample_info:
-            st.success('Here are the samples found:')
-            for line in sample_info.split('\n'):
-                if ' - ' in line:
-                    parts = line.split(' - ')
-                    if len(parts) >= 2:
-                        song_title, artist = parts[0].strip(), parts[1].strip()
-                        display_song_with_link(song_title, artist)
-                else:
-                    st.write(line)  # For non-song lines or when unable to parse details
-        else:
-            st.write("No specific sample information could be retrieved.")
+        st.success('Here are the samples found:')
+        display_samples(sample_info)
     else:
         st.error(f"Failed to fetch samples: {response.status_code}, {response.text}")
+
+def display_samples(sample_info):
+    """Displays the sample information extracted from the Perplexity API response."""
+    for line in sample_info.split('\n'):
+        if ' - ' in line:  # Assuming the format is 'Song Title - Artist'
+            song_title, artist = line.split(' - ', 1)
+            youtube_url = generate_youtube_search_url(song_title.strip(), artist.strip())
+            st.markdown(f"**{song_title} by {artist}** [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
+        else:
+            st.write(line)  # For contextual or descriptive lines not matching the expected format
+
 
 # UI setup for input and option selection
 option = st.selectbox("Choose your option:", ["Sample Train", "Vibe"], index=1)
