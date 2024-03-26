@@ -1,26 +1,27 @@
 import streamlit as st
 import requests
-import openai
 
 # Assuming API keys are stored in Streamlit's secrets
 perplexity_api_key = st.secrets["perplexity"]["api_key"]
-openai_api_key = st.secrets["openai"]["api_key"]
 
-# Setting the OpenAI API key for later use
-openai.api_key = openai_api_key
-
-def call_perplexity_api(topic):
+def call_perplexity_api(option, input_text):
     url = 'https://api.perplexity.ai/chat/completions'
     headers = {
         'Authorization': f'Bearer {perplexity_api_key}',
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
+    # Adjusting the payload based on the user's choice
+    if option == "Sample Train":
+        query_content = f"Give me a list of songs sampled in the song {input_text} with YouTube links."
+    else:  # Vibe
+        query_content = f"Based on feeling {input_text}, suggest a perfect playlist with YouTube links."
+    
     payload = {
-        "model": "sonar-medium-online",  # Using the specified model for your queries
+        "model": "sonar-medium-online",
         "messages": [
-            {"role": "system", "content": "You're a knowledgeable assistant tasked with providing detailed news stories and playlists including source links."},
-            {"role": "user", "content": topic}
+            {"role": "system", "content": "You're a knowledgeable assistant tasked with providing detailed playlists including source links."},
+            {"role": "user", "content": query_content}
         ]
     }
     response = requests.post(url, headers=headers, json=payload)
@@ -29,40 +30,23 @@ def call_perplexity_api(topic):
     else:
         return f"Failed with status code {response.status_code}: {response.text}"
 
-def refine_content_with_gpt(content):
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4-0125-preview",
-            messages=[
-                {"role": "system", "content": "You are an AI who formats provided content into a concise, readable format for web display, ensuring to retain all original details and links."},
-                {"role": "user", "content": content}
-            ]
-        )
-        return response['choices'][0]['message']['content'].strip()
-    except Exception as e:
-        return f"An error occurred: {str(e)}"
-
 # Streamlit app layout
-st.title('Your Daily Digest and Playlist Generator')
+st.title('Music Playlist Generator')
 
-with st.form("user_input"):
-    name = st.text_input("Name", help="What's your name?")
-    topic = st.text_input("News Topic", help="Enter a topic to get the latest news.")
-    vibe = st.text_input("Vibe", help="Describe the vibe for your music playlist.")
-    submitted = st.form_submit_button("Submit")
+# Dropdown for user to choose between Sample Train or Vibe
+option = st.selectbox("Choose your option:", ["Sample Train", "Vibe"])
 
-if submitted:
-    with st.spinner('Fetching your personalized content...'):
-        news_content = call_perplexity_api(f"latest news about {topic} including source links")
-        playlist_content = call_perplexity_api(f"music playlist suggestions for a {vibe} vibe including source links")
-        
-        refined_news = refine_content_with_gpt(news_content)
-        refined_playlist = refine_content_with_gpt(playlist_content)
+input_text = ""
+if option == "Sample Train":
+    input_text = st.text_input("Enter a source song:")
+elif option == "Vibe":
+    input_text = st.text_input("How are you feeling?")
 
-    st.success('Content fetched successfully!')
-    
-    st.subheader('Latest News')
-    st.write(refined_news)
-
-    st.subheader('Music Playlist Suggestions')
-    st.write(refined_playlist)
+if st.button("Submit"):
+    if not input_text:
+        st.write("Please enter the required information.")
+    else:
+        with st.spinner('Fetching your personalized playlist...'):
+            playlist_content = call_perplexity_api(option, input_text)
+            st.success('Playlist fetched successfully!')
+            st.write(playlist_content)
