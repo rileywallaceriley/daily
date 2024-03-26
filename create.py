@@ -56,17 +56,18 @@ if st.button("Discover Songs"):
             
             # Assuming song details are separated by a specific delimiter
             for detail in song_details.split('\n'):  # Adjust based on the actual format of the response
-                if detail.strip():  # Check if the detail line is not empty
-                    # Simple parsing for title, artist, and year
-                    parts = detail.split(', ')
-                    if len(parts) >= 3:
-                        title, artist, year = parts[0], parts[1], parts[2]
-                        youtube_url = generate_youtube_search_url(f"{title} {artist}")
-                        st.markdown(f"""
-                        **Title:** {title}  
-                        **Artist:** {artist}  
-                        **Year:** {year}  
-                        [Click here to listen]({youtube_url})  
-                        """)
-                    else:
-                        st.write("Missing some information for a song.")
+    if detail.strip():  # Check if the detail line is not empty
+        # Simple parsing for title, artist, and year
+        parts = detail.split(', ')
+        if len(parts) >= 3:
+            title, artist, year = parts[0], parts[1], parts[2]
+            youtube_url = generate_youtube_search_url(f"{title} {artist}")
+            markdown_str = f"""
+            **Title:** {title}  
+            **Artist:** {artist}  
+            **Year:** {year}  
+            [Click here to listen]({youtube_url})  
+            """
+            st.markdown(markdown_str, unsafe_allow_html=True)
+        else:
+            st.write("Missing some information for a song.")
