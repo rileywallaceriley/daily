@@ -4,7 +4,7 @@ import random
 import urllib.parse
 
 def setup_page_layout():
-    """Setups up the page layout with a fixed intro and displays a randomly selected image."""
+    """Sets up the page layout with a fixed intro and displays a randomly selected image."""
     st.image(get_random_image())
     st.write("Welcome to Vibe Cat; give me your vibe (a song you love, a feeling, etc.), and I'll curate a great playlist for you.")
 
@@ -22,14 +22,23 @@ def get_random_image():
 
 def generate_youtube_search_url(song_title, main_artist):
     """Generates a YouTube search URL for a given song title and main artist."""
-    query = f"{song_title} {main_artist}".strip()
+    query = f"{song_title}+{main_artist}".replace(" ", "+")
     base_url = "https://www.youtube.com/results?search_query="
     return base_url + urllib.parse.quote_plus(query)
 
-def display_song_with_link(song_title, main_artist):
-    """Displays a song title and main artist with a link to search the song on YouTube."""
-    youtube_url = generate_youtube_search_url(song_title, main_artist)
-    st.markdown(f"**{song_title}** by {main_artist} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
+def display_song_with_link(line):
+    """Displays a song title and main artist with a link to search the song on YouTube, formatted correctly."""
+    # Split line and extract song title and main artist, assuming format "[number] song_title by main_artist"
+    try:
+        _, song_info = line.split(' ', 1)
+        song_title, main_artist = song_info.rsplit(' by ', 1)
+        song_title = song_title.strip()
+        main_artist = main_artist.split(' ft.')[0].split(' feat.')[0].split(',')[0].strip()
+        youtube_url = generate_youtube_search_url(song_title, main_artist)
+        st.markdown(f"{song_title} by {main_artist} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
+    except ValueError:
+        # In case the line doesn't conform to the expected format, log it for review.
+        st.error(f"Could not process line for YouTube link: {line}")
 
 def generate_gpt_playlist_intro_and_songs(vibe, include_top_40, stay_super_random):
     """Generates an introduction and a playlist based on the user's vibe using GPT-4."""
@@ -73,8 +82,4 @@ if st.button("Curate Playlist"):
             intro = lines[0]  # The intro
             st.write(intro)
             for line in lines[1:]:  # The songs
-                if ' - ' in line:
-                    parts = line.split(' - ')
-                    if len(parts) >= 2:
-                        song_title, main_artist = parts[0].strip(), parts[1].split(' ft.')[0].split(' feat.')[0].split(',')[0].strip()
-                        display_song_with_link(song_title, main_artist)
+                display_song_with_link(line)
