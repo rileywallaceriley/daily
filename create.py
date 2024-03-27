@@ -9,6 +9,19 @@ openai.api_key = st.secrets["openai"]["api_key"]
 def setup_page_layout():
     """Displays a randomly selected header image and a welcoming message."""
     st.image(get_random_image())
+    # Updated welcoming message with bold text and additional instructions
+    st.markdown("""
+                <style>
+                .welcome-message {
+                    text-align: center;
+                    line-height: 1.5;
+                }
+                </style>
+                <div class="welcome-message">
+                    <strong>Welcome to Vibe Cat; share your vibe, and let's find some tunes together.</strong><br><br>
+                    Need to switch tabs? No worry, I'll keep your playlist safe here so you can visit it throughout the day. Any errors? Just reload. Meow.
+                </div>
+                """, unsafe_allow_html=True)
 
 def get_random_image():
     """Returns a random image URL from a predefined list."""
@@ -19,11 +32,6 @@ def get_random_image():
         "https://i.ibb.co/k6cychT/5-C4-FF130-FFD7-4860-B75-F-B442-EB296911.jpg"
     ]
     return random.choice(image_urls)
-
-st.markdown("""
-                **Welcome to Vibe Cat; share your vibe, and let's find some tunes together.**  
-                Need to switch tabs? No worry, I'll keep your playlist safe here so you can visit it throughout the day. Any errors? Just reload. Meow.
-                """)
 
 def generate_youtube_search_url(song_title, main_artist):
     """Generates a YouTube search URL for the given song title and artist."""
@@ -79,3 +87,7 @@ if 'playlist_content' not in st.session_state or vibe != st.session_state.get('l
 else:
     # Display the stored playlist without regenerating it.
     display_playlist(st.session_state['playlist_content'])
+
+# Adding a line at the bottom of the page to meet the cat dad
+st.markdown("""---""")
+st.markdown("""<h4 style='text-align: center;'><a href="http://www.instagram.com/rileywallace" target="_blank">Meet my cat dad</a></h4>""", unsafe_allow_html=True)
