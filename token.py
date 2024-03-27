@@ -15,7 +15,7 @@ def main():
             'client_secret': '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',
             'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
             'token_uri': 'https://oauth2.googleapis.com/token',
-            'redirect_uris': https://share.streamlit.io/rileywallaceriley/daily/main/create.py,
+            'redirect_uris': 'https://share.streamlit.io/rileywallaceriley/daily/main/create.py',
         }
     }, SCOPES)
     
