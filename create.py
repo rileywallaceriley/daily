@@ -90,4 +90,4 @@ else:
 
 # Adding a line at the bottom of the page to meet the cat dad
 st.markdown("""---""")
-st.markdown("""<style='text-align: center;'><a href="http://www.instagram.com/rileywallace" target="_blank"><strong>Meet my cat dad</strong></a></h4>""", unsafe_allow_html=True)
+st.markdown("""<a href="http://www.instagram.com/rileywallace" target="_blank"><strong>Meet my cat dad</strong></a></h4>""", unsafe_allow_html=True)
