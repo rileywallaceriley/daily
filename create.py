@@ -63,5 +63,6 @@ if st.button("Curate Playlist"):
     if not vibe:
         st.warning("Please enter a vibe to get started.")
     else:
-        playlist_content = generate_playlist(vibe)
+        with st.spinner('Curating your playlist...'):  # Displays a loading animation
+            playlist_content = generate_playlist(vibe)
         display_playlist(playlist_content)
