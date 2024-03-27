@@ -8,7 +8,7 @@ CLIENT_SECRET = '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'
 SCOPES = ['https://www.googleapis.com/auth/youtube']
 
 # This should match one of the redirect URIs you set in the Google Cloud Console, adapted for manual copying of the code
-REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
+REDIRECT_URI = 'https://share.streamlit.io/rileywallaceriley/daily/main/create.py'
 
 def main():
     if 'flow' not in st.session_state:
