@@ -53,7 +53,8 @@ def display_playlist(playlist_content, vibe):
     """Displays the generated playlist content, each song with a YouTube link, and a dynamic introduction."""
     # Add a dynamically generated intro
     st.markdown(generate_intro(vibe), unsafe_allow_html=True)
-    songs = playlist_content.split('\n')[:10]
+     # Split the playlist content by new lines and limit to 10 songs
+    songs = playlist_content.split('\n')[:10]  # This slices the list to contain only the first 10 elements
     for song in songs:
         song_info_clean = song.lstrip('0123456789.* ')
         if ' by ' in song_info_clean:
