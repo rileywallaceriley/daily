@@ -9,10 +9,6 @@ openai.api_key = st.secrets["openai"]["api_key"]
 def setup_page_layout():
     """Displays a randomly selected header image and a welcoming message."""
     st.image(get_random_image())
-st.markdown("""
-                **Welcome to Vibe Cat; share your vibe, and let's find some tunes together.**  
-                Need to switch tabs? No worry, I'll keep your playlist safe here so you can visit it throughout the day. Any errors? Just reload. Meow.
-                """)
 
 def get_random_image():
     """Returns a random image URL from a predefined list."""
@@ -23,6 +19,11 @@ def get_random_image():
         "https://i.ibb.co/k6cychT/5-C4-FF130-FFD7-4860-B75-F-B442-EB296911.jpg"
     ]
     return random.choice(image_urls)
+
+st.markdown("""
+                **Welcome to Vibe Cat; share your vibe, and let's find some tunes together.**  
+                Need to switch tabs? No worry, I'll keep your playlist safe here so you can visit it throughout the day. Any errors? Just reload. Meow.
+                """)
 
 def generate_youtube_search_url(song_title, main_artist):
     """Generates a YouTube search URL for the given song title and artist."""
