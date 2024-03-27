@@ -9,7 +9,7 @@ openai.api_key = st.secrets["openai"]["api_key"]
 def setup_page_layout():
     """Displays a randomly selected header image and a welcoming message."""
     st.image(get_random_image())
-    # Updated welcoming message with bold text and additional instructions
+    # Updated welcoming message with HTML for centering and line spacing
     st.markdown("""
                 <style>
                 .welcome-message {
@@ -19,7 +19,7 @@ def setup_page_layout():
                 </style>
                 <div class="welcome-message">
                     <strong>Welcome to Vibe Cat; share your vibe, and let's find some tunes together.</strong><br><br>
-                    Need to switch tabs? No worry, I'll keep your playlist safe here so you can visit it throughout the day. <br><br>Any errors? Just reload. Meow.<br><br>
+                    Need to switch tabs? No worry, I'll keep your playlist safe here so you can visit it throughout the day. Any errors? Just reload. Meow.
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -39,11 +39,22 @@ def generate_youtube_search_url(song_title, main_artist):
     base_url = "https://www.youtube.com/results?search_query="
     return base_url + urllib.parse.quote_plus(query)
 
-def display_playlist(playlist_content):
-    """Displays the generated playlist content, each song with a YouTube link."""
+def generate_intro(vibe):
+    """Generates a dynamic introduction based on the selected vibe."""
+    intros = [
+        f"Crafting a playlist to match the '{vibe}' vibe. Sit back, relax, and enjoy the rhythm. Meow.",
+        f"Diving deep into the essence of '{vibe}'. Your tailored tunes are coming up. Meow.",
+        f"Exploring the '{vibe}' vibe with some curated beats. Get ready for an auditory adventure. Meow.",
+        f"Matching the '{vibe}' mood with some sonic gems. Your journey through music begins now. Meow."
+    ]
+    return random.choice(intros)
+
+def display_playlist(playlist_content, vibe):
+    """Displays the generated playlist content, each song with a YouTube link, and a dynamic introduction."""
+    # Add a dynamically generated intro
+    st.markdown(generate_intro(vibe), unsafe_allow_html=True)
     songs = playlist_content.split('\n')
     for song in songs:
-        # Clean song info to remove numbers and asterisks
         song_info_clean = song.lstrip('0123456789.* ')
         if ' by ' in song_info_clean:
             parts = song_info_clean.split(' by ')
@@ -56,7 +67,7 @@ def generate_playlist(vibe):
     """Generates a playlist based on the given vibe using the GPT-4 Chat model."""
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4-0125-preview",  # Use the Chat model
+            model="gpt-4-0125-preview", 
             messages=[
                 {"role": "system", "content": "You are a knowledgeable music enthusiast. Generate a playlist based on a given vibe, listing songs in 'song_title by artist' format."},
                 {"role": "user", "content": f"Vibe: {vibe}"}
@@ -73,21 +84,17 @@ vibe = st.text_input("What's your vibe?")
 include_top_40 = st.checkbox("Include Top 40")
 stay_super_random = st.checkbox("Stay Super Random")
 
-if 'playlist_content' not in st.session_state or vibe != st.session_state.get('last_vibe', ''):
-    if st.button("Curate Playlist"):
-        if not vibe:
-            st.warning("Please enter a vibe to get started.")
-        else:
-            with st.spinner('Curating your playlist...'):
-                playlist_content = generate_playlist(vibe)
-                # Store the generated playlist and the current vibe in the session state.
-                st.session_state['playlist_content'] = playlist_content
-                st.session_state['last_vibe'] = vibe
-                display_playlist(playlist_content)
-else:
-    # Display the stored playlist without regenerating it.
-    display_playlist(st.session_state['playlist_content'])
+if st.button("Curate Playlist"):
+    if not vibe:
+        st.warning("Please enter a vibe to get started.")
+    else:
+                with st.spinner('Curating your playlist...'):
+            playlist_content = generate_playlist(vibe)
+            # Add space before displaying the playlist
+            st.write("")
+            display_playlist(playlist_content, vibe)
 
-# Adding a line at the bottom of the page to meet the cat dad
-st.markdown("""---""")
-st.markdown("""<a href="http://www.instagram.com/rileywallace" target="_blank"><strong>Meet my cat dad</strong></a></h4>""", unsafe_allow_html=True)
+# Add a line and link to Instagram at the bottom of the page
+st.markdown("---")
+st.markdown(
+    """<a href="http://www.instagram.com/rileywallace" target="_blank">Meet my cat dad</a>""", unsafe_allow_html=True)
