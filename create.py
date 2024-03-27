@@ -3,7 +3,7 @@ import openai
 import random
 import urllib.parse
 
-# Assuming your OpenAI API key is set in Streamlit's secrets for enhanced security
+# Assuming your OpenAI API key is stored securely in Streamlit's secrets
 openai.api_key = st.secrets["openai"]["api_key"]
 
 def setup_page_layout():
@@ -28,18 +28,16 @@ def generate_youtube_search_url(song_title, main_artist):
     return base_url + urllib.parse.quote_plus(query)
 
 def generate_playlist(vibe):
-    """Generates a playlist based on the given vibe using the GPT-4 model."""
+    """Generates a playlist based on the given vibe using the GPT-4 Chat model."""
     try:
-        response = openai.Completion.create(
-            model="gpt-4-0125-preview",  # Explicitly specify GPT-4 model
-            prompt=f"Generate a playlist for the vibe: '{vibe}'. List songs in 'song_title by artist' format.",
-            temperature=0.7,
-            max_tokens=500,
-            top_p=1.0,
-            frequency_penalty=0.0,
-            presence_penalty=0.0
+        response = openai.ChatCompletion.create(
+            model="gpt-4-0125-preview",  # Use the Chat model
+            messages=[
+                {"role": "system", "content": "You are a knowledgeable music enthusiast. Generate a playlist based on a given vibe, listing songs in 'song_title by artist' format."},
+                {"role": "user", "content": f"Vibe: {vibe}"}
+            ]
         )
-        return response.choices[0].text.strip()
+        return response.choices[0].message['content']
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
         return ""
