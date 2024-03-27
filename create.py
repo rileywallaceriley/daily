@@ -55,22 +55,6 @@ def generate_playlist(vibe):
         st.error(f"An error occurred: {str(e)}")
         return ""
 
-# At the beginning of your script, after generating or loading the playlist:
-if 'playlist_content' not in st.session_state or vibe != st.session_state.get('last_vibe', ''):
-    # This means we either haven't generated a playlist yet, or the vibe has changed.
-    # Generate the playlist and save it along with the current vibe in the session state.
-    playlist_content = generate_playlist(vibe)
-    st.session_state['playlist_content'] = playlist_content
-    st.session_state['last_vibe'] = vibe
-else:
-    # If we reach here, it means the user has navigated away and come back, or has not changed the vibe.
-    # Retrieve the previously generated playlist without needing to regenerate it.
-    playlist_content = st.session_state['playlist_content']
-
-# Display the playlist as usual
-display_playlist(playlist_content)
-
-
 setup_page_layout()
 
 vibe = st.text_input("What's your vibe?")
