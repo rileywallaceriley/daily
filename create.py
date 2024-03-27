@@ -61,10 +61,17 @@ vibe = st.text_input("What's your vibe?")
 include_top_40 = st.checkbox("Include Top 40")
 stay_super_random = st.checkbox("Stay Super Random")
 
-if st.button("Curate Playlist"):
-    if not vibe:
-        st.warning("Please enter a vibe to get started.")
-    else:
-        with st.spinner('Curating your playlist...'):
-            playlist_content = generate_playlist(vibe)
-        display_playlist(playlist_content)
+if 'playlist_content' not in st.session_state or vibe != st.session_state.get('last_vibe', ''):
+    if st.button("Curate Playlist"):
+        if not vibe:
+            st.warning("Please enter a vibe to get started.")
+        else:
+            with st.spinner('Curating your playlist...'):
+                playlist_content = generate_playlist(vibe)
+                # Store the generated playlist and the current vibe in the session state.
+                st.session_state['playlist_content'] = playlist_content
+                st.session_state['last_vibe'] = vibe
+                display_playlist(playlist_content)
+else:
+    # Display the stored playlist without regenerating it.
+    display_playlist(st.session_state['playlist_content'])
