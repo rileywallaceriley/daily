@@ -20,35 +20,36 @@ def get_random_image():
         st.session_state['image_url'] = random.choice(image_urls)
     return st.session_state['image_url']
 
-def display_song_with_link(song_info):
-    """Extracts song title and artist from the given info and displays a YouTube search link."""
-    # Assuming the format "song_title by main_artist"
-    parts = song_info.split(' by ')
-    if len(parts) >= 2:
-        song_title = parts[0].strip('"')
-        main_artist = parts[1].split(',')[0].strip()  # Splitting in case of multiple artists
-        query = f"{song_title} {main_artist}".replace(" ", "+")
-        youtube_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(query)}"
-        st.markdown(f"**{song_title}** by {main_artist} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
+def generate_youtube_search_url(song_title, main_artist):
+    """Generates a YouTube search URL for a given song title and main artist."""
+    query = f"{song_title} {main_artist}".replace(" ", "+")
+    base_url = "https://www.youtube.com/results?search_query="
+    return base_url + urllib.parse.quote_plus(query)
+
+def display_song_with_link(song_title, main_artist):
+    """Displays a song title and main artist with a link to search the song on YouTube."""
+    youtube_url = generate_youtube_search_url(song_title, main_artist)
+    st.markdown(f"**{song_title}** by {main_artist} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
 
 def generate_playlist_intro_and_songs(vibe, include_top_40, stay_super_random):
-    """Generates a playlist based on the user's vibe using OpenAI's GPT."""
-    prompt = f"Describe the vibe '{vibe}'. Then, list out songs that match this vibe, formatted as 'song_title by main_artist'."
+    """Generates an introduction and a playlist based on the user's vibe using OpenAI's GPT-4."""
+    prompt = f"Describe the vibe '{vibe}', then generate a playlist based on it. Include an introduction about the vibe and list songs formatted as 'song_title by main_artist'."
+    
     response = openai.ChatCompletion.create(
-        model="text-davinci-003",  # Adjust according to the latest or desired model
+        model="gpt-4-0125-preview",  # Correct GPT model
         prompt=prompt,
         temperature=0.7,
         max_tokens=1024,
-        top_p=1.0,
-        frequency_penalty=0.0,
-        presence_penalty=0.0
+        n=1,
+        stop=None,
+        api_key=st.secrets["openai"]["api_key"]
     )
     return response.choices[0].text.strip()
 
-# Initialization
-openai.api_key = st.secrets["openai"]["api_key"]
+# Display the header image and introductory text
+setup_page_layout()
 
-# UI elements for user input
+# User inputs for vibe, preferences, and button to generate playlist
 input_text = st.text_input("Enter your vibe:")
 include_top_40 = st.checkbox("Include Top 40")
 stay_super_random = st.checkbox("Stay Super Random")
@@ -59,5 +60,9 @@ if st.button("Curate Playlist"):
     else:
         with st.spinner('Curating your playlist...'):
             playlist_content = generate_playlist_intro_and_songs(input_text, include_top_40, stay_super_random)
-            for line in playlist_content.split('\n')[1:]:  # Skip the first line assuming it's an intro
-                display_song_with_link(line)
+            intro, *songs = playlist_content.split('\n')
+            st.write(intro)  # Display the intro
+            for song in songs:
+                if ' by ' in song:
+                    song_title, main_artist = song.split(' by ')
+                    display_song_with_link(song_title.strip(), main_artist.strip())
