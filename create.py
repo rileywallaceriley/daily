@@ -9,9 +9,10 @@ openai.api_key = st.secrets["openai"]["api_key"]
 def setup_page_layout():
     """Displays a randomly selected header image and a welcoming message."""
     st.image(get_random_image())
-    st.write("Welcome to Vibe Cat; share your vibe, and let's find some tunes together. 
-    
-             Need to switch tabs? No worry, I'll keep your playlist safe here so you can visit it throughout the day. Any errors? Just reload. Meow.")
+st.markdown("""
+                **Welcome to Vibe Cat; share your vibe, and let's find some tunes together.**  
+                Need to switch tabs? No worry, I'll keep your playlist safe here so you can visit it throughout the day. Any errors? Just reload. Meow.
+                """)
 
 def get_random_image():
     """Returns a random image URL from a predefined list."""
