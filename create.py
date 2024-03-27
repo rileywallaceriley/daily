@@ -4,13 +4,12 @@ import random
 import urllib.parse
 
 def setup_page_layout():
-    """Setups up the page layout with a fixed intro."""
+    """Setups up the page layout with a fixed intro and displays a randomly selected image."""
     st.image(get_random_image())
-    st.write("Welcome to Vibe Cat; give me your vibe (a song you love, a feeling, etc.) and I'll curate a great playlist.")
-    # Feel free to customize the intro text further as needed.
+    st.write("Welcome to Vibe Cat; give me your vibe (a song you love, a feeling, etc.), and I'll curate a great playlist for you.")
 
 def get_random_image():
-    """Selects and displays a random image only once per session."""
+    """Selects a random image only once per session."""
     if 'image_url' not in st.session_state:
         image_urls = [
             "https://i.ibb.co/BNHvHM0/684518-B3-B7-D0-45-D7-8801-2355-D70-D169-C.webp",
@@ -30,11 +29,13 @@ def generate_youtube_search_url(song_title, main_artist):
 def display_song_with_link(song_title, main_artist):
     """Displays a song title and main artist with a link to search the song on YouTube."""
     youtube_url = generate_youtube_search_url(song_title, main_artist)
-    st.markdown(f"{song_title} by {main_artist} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
+    st.markdown(f"**{song_title}** by {main_artist} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
 
-def generate_gpt_playlist(vibe, include_top_40, stay_super_random):
-    """Generates a playlist based on the user's vibe and preferences using GPT-4."""
-    prompt = f"Generate a playlist based on the vibe '{vibe}'."
+def generate_gpt_playlist_intro_and_songs(vibe, include_top_40, stay_super_random):
+    """Generates an introduction and a playlist based on the user's vibe using GPT-4."""
+    prompt = f"Describe the vibe '{vibe}', then generate a playlist based on it. " \
+             "Start with an introduction about the vibe, followed by song titles and main artists. " \
+             "Exclude additional commentary for each song."
     if include_top_40:
         prompt += " Include popular songs mixed with unknown ones."
     if stay_super_random:
@@ -44,7 +45,7 @@ def generate_gpt_playlist(vibe, include_top_40, stay_super_random):
         model="gpt-4-0125-preview",
         messages=[
             {"role": "system", "content": prompt},
-            {"role": "user", "content": "Please generate the playlist."}
+            {"role": "user", "content": "Please describe the vibe and generate the playlist."}
         ]
     )
     return response.choices[0].message['content'].strip()
@@ -66,12 +67,14 @@ if st.button("Curate Playlist"):
         st.warning("Please enter the required information.")
     else:
         with st.spinner('Curating your playlist...'):
-            playlist_content = generate_gpt_playlist(input_text, include_top_40, stay_super_random)
-            st.write("Here is your curated playlist:")
-            for line in playlist_content.split('\n'):
+            playlist_content = generate_gpt_playlist_intro_and_songs(input_text, include_top_40, stay_super_random)
+            # Assuming the first line is the intro and the rest are songs
+            lines = playlist_content.split('\n')
+            intro = lines[0]  # The intro
+            st.write(intro)
+            for line in lines[1:]:  # The songs
                 if ' - ' in line:
                     parts = line.split(' - ')
                     if len(parts) >= 2:
                         song_title, main_artist = parts[0].strip(), parts[1].split(' ft.')[0].split(' feat.')[0].split(',')[0].strip()
                         display_song_with_link(song_title, main_artist)
-            st.write("Enjoy your personalized playlist! Feel free to explore more vibes and curate more playlists.")
