@@ -27,6 +27,19 @@ def generate_youtube_search_url(song_title, main_artist):
     base_url = "https://www.youtube.com/results?search_query="
     return base_url + urllib.parse.quote_plus(query)
 
+def display_playlist(playlist_content):
+    """Displays the generated playlist content, each song with a YouTube link."""
+    songs = playlist_content.split('\n')
+    for song in songs:
+        # Clean song info to remove numbers and asterisks
+        song_info_clean = song.lstrip('0123456789.* ')
+        if ' by ' in song_info_clean:
+            parts = song_info_clean.split(' by ')
+            if len(parts) == 2:
+                song_title, main_artist = parts
+                youtube_url = generate_youtube_search_url(song_title.strip(), main_artist.strip())
+                st.markdown(f"**{song_title.strip()}** by {main_artist.strip()} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
+
 def generate_playlist(vibe):
     """Generates a playlist based on the given vibe using the GPT-4 Chat model."""
     try:
@@ -42,17 +55,6 @@ def generate_playlist(vibe):
         st.error(f"An error occurred: {str(e)}")
         return ""
 
-def display_playlist(playlist_content):
-    """Displays the generated playlist content, each song with a YouTube link."""
-    songs = playlist_content.split('\n')
-    for song in songs:
-        if ' by ' in song:
-            parts = song.split(' by ')
-            if len(parts) == 2:
-                song_title, main_artist = parts
-                youtube_url = generate_youtube_search_url(song_title.strip(), main_artist.strip())
-                st.markdown(f"**{song_title.strip()}** by {main_artist.strip()} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
-
 setup_page_layout()
 
 vibe = st.text_input("What's your vibe?")
@@ -63,6 +65,6 @@ if st.button("Curate Playlist"):
     if not vibe:
         st.warning("Please enter a vibe to get started.")
     else:
-        with st.spinner('Curating your playlist...'):  # Displays a loading animation
+        with st.spinner('Curating your playlist...'):
             playlist_content = generate_playlist(vibe)
         display_playlist(playlist_content)
