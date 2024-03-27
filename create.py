@@ -3,16 +3,16 @@ import openai
 import random
 import urllib.parse
 
-# Assuming your OpenAI API key is stored securely in Streamlit's secrets
+# Configure your OpenAI API key here or fetch it from Streamlit's secrets
 openai.api_key = st.secrets["openai"]["api_key"]
 
 def setup_page_layout():
-    """Displays a randomly selected header image and a welcoming message."""
+    """Sets up the page layout, including a header image."""
     st.image(get_random_image())
-    st.write("Welcome to Vibe Cat; share your vibe, and let's find some tunes together.")
+    st.write("Welcome to Vibe Cat! Share your vibe, and let's discover some tunes.")
 
 def get_random_image():
-    """Returns a random image URL from a predefined list."""
+    """Returns a random image URL."""
     image_urls = [
         "https://i.ibb.co/BNHvHM0/684518-B3-B7-D0-45-D7-8801-2355-D70-D169-C.webp",
         "https://i.ibb.co/LJQZ9s7/33540-C0-B-E7-DE-48-CC-AA39-64-BA2-E57-B264.jpg",
@@ -21,50 +21,37 @@ def get_random_image():
     ]
     return random.choice(image_urls)
 
-def generate_youtube_search_url(song_title, main_artist):
-    """Generates a YouTube search URL for the given song title and artist."""
-    query = f"{song_title} {main_artist}".replace(" ", "+")
-    base_url = "https://www.youtube.com/results?search_query="
-    return base_url + urllib.parse.quote_plus(query)
-
 def display_playlist(playlist_content):
-    """Displays the generated playlist content, each song with a YouTube link."""
-    songs = playlist_content.split('\n')
-    for song in songs:
-        # Clean song info to remove numbers and asterisks
-        song_info_clean = song.lstrip('0123456789.* ')
-        if ' by ' in song_info_clean:
-            parts = song_info_clean.split(' by ')
-            if len(parts) == 2:
-                song_title, main_artist = parts
-                youtube_url = generate_youtube_search_url(song_title.strip(), main_artist.strip())
-                st.markdown(f"**{song_title.strip()}** by {main_artist.strip()} [Listen on YouTube]({youtube_url})", unsafe_allow_html=True)
+    """Displays the generated playlist and provides a copy to clipboard feature."""
+    st.text(playlist_content)
+    
+    # Button to copy the playlist to the clipboard
+    if st.button('Copy Playlist'):
+        st.markdown(f'''
+            <textarea readonly id="txt_area" style="height: 0;width: 0;opacity: 0;">{playlist_content}</textarea>
+            <button onclick="navigator.clipboard.writeText(document.getElementById('txt_area').value)">Copy to Clipboard</button>
+            ''', unsafe_allow_html=True)
+        st.success('Playlist copied to clipboard!')
 
 def generate_playlist(vibe):
-    """Generates a playlist based on the given vibe using the GPT-4 Chat model."""
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4-0125-preview",  # Use the Chat model
-            messages=[
-                {"role": "system", "content": "You are a knowledgeable music enthusiast. Generate a playlist based on a given vibe, listing songs in 'song_title by artist' format."},
-                {"role": "user", "content": f"Vibe: {vibe}"}
-            ]
-        )
-        return response.choices[0].message['content']
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
-        return ""
+    """Generates a playlist based on the vibe using GPT-4 and returns it as a string."""
+    response = openai.ChatCompletion.create(
+        model="gpt-4-0125-preview",
+        messages=[
+            {"role": "system", "content": "Generate a playlist based on the given vibe."},
+            {"role": "user", "content": vibe}
+        ]
+    )
+    return response.choices[0].message['content']
 
+# UI Setup
 setup_page_layout()
+vibe_input = st.text_input("What's your vibe?")
 
-vibe = st.text_input("What's your vibe?")
-include_top_40 = st.checkbox("Include Top 40")
-stay_super_random = st.checkbox("Stay Super Random")
-
-if st.button("Curate Playlist"):
-    if not vibe:
-        st.warning("Please enter a vibe to get started.")
+if st.button("Generate Playlist"):
+    if vibe_input:
+        with st.spinner('Generating your playlist...'):
+            playlist = generate_playlist(vibe_input)
+        display_playlist(playlist)
     else:
-        with st.spinner('Curating your playlist...'):
-            playlist_content = generate_playlist(vibe)
-        display_playlist(playlist_content)
+        st.warning("Please enter a vibe to get started.")
