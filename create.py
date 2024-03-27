@@ -88,8 +88,9 @@ if st.button("Curate Playlist"):
     if not vibe:
         st.warning("Please enter a vibe to get started.")
     else:
-                with st.spinner('Curating your playlist...'):
+        with st.spinner('Curating your playlist...'):
             playlist_content = generate_playlist(vibe)
+            # Make sure the rest of the code inside this block is properly indented as well.
             # Add space before displaying the playlist
             st.write("")
             display_playlist(playlist_content, vibe)
