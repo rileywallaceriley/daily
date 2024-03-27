@@ -19,7 +19,7 @@ def setup_page_layout():
                 </style>
                 <div class="welcome-message">
                     <strong>Welcome to Vibe Cat; share your vibe, and let's find some tunes together.</strong><br><br>
-                    Need to switch tabs? No worry, I'll keep your playlist safe here so you can visit it throughout the day. Any errors? Just reload. Meow.
+                    Need to switch tabs? No worry, I'll keep your playlist safe here so you can visit it throughout the day. Any errors? Just reload. Meow.<br><br>
                 </div>
                 """, unsafe_allow_html=True)
 
