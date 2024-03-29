@@ -29,7 +29,7 @@ else:
                 'Accept': 'application/json'
             }
             payload = {
-                "model": "mistral-7b-instruct",
+                "model": "sonar-medium-online",
                 "messages": [
                     {
                         "role": "system",
