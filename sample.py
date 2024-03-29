@@ -67,4 +67,4 @@ else:
             # Add a line and link to Instagram at the bottom of the page
 st.markdown("---")
 st.markdown(
-    """<a href="http://www.instagram.com/rileywallace" target="_blank">Meet my cat dad</a>""", unsafe_allow_html=True)
+    """<a href="http://www.instagram.com/rileywallace" target="_blank">Meet my dog dad</a>""", unsafe_allow_html=True)
