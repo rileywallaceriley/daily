@@ -1,70 +1,51 @@
 import os
 import requests
 import streamlit as st
-from dotenv import load_dotenv
 import openai
 
-# Load environment variables
-load_dotenv()
+# Load environment variables if running locally, for Streamlit Cloud use st.secrets
+PERPLEXITY_API_KEY = st.secrets["perplexity"]["api_key"]
+OPENAI_API_KEY = st.secrets["openai"]["api_key"]
 
-perplexity_api_key = os.getenv('PERPLEXITY_API_KEY')
-openai_api_key = os.getenv('OPENAI_API_KEY')
+def fetch_song_samples(song, artist):
+    """Fetches song samples details from Perplexity."""
+    url = 'https://api.perplexity.ai/chat/completions'
+    headers = {
+        'Authorization': f'Bearer {PERPLEXITY_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        "model": "sonar-medium-online",
+        "messages": [
+            {"role": "user", "content": f"Provide real-time information on the samples used in '{song}' by {artist}."}
+        ]
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code == 200:
+        return response.json()['choices'][0]['message']['content']
+    else:
+        raise Exception(f"Perplexity API call failed with status {response.status_code}")
 
-if perplexity_api_key is None or openai_api_key is None:
-    st.error("API keys not found. Please set the PERPLEXITY_API_KEY and OPENAI_API_KEY environment variables.")
-else:
-    # Streamlit app interface
-    st.title('Sample Explorer')
+def format_response_with_gpt4(song_details):
+    """Formats song details using GPT-4."""
+    openai.api_key = OPENAI_API_KEY
+    response = openai.Completion.create(
+        model="gpt-4-0125-preview",
+        prompt=f"Format the following song details into a concise summary: {song_details}\n\nGenerate a YouTube search link based on the song details.",
+        temperature=0.7,
+        max_tokens=150
+    )
+    return response.choices[0].text
 
-    # User inputs for song and artist
-    song = st.text_input('Enter the song title:')
-    artist = st.text_input('Enter the artist name:')
+st.title('Sample Explorer')
 
-    if st.button('Find Samples'):
-        if song and artist:
-            # Formulating the query for real-time data from Perplexity
-            query = f"Provide real-time information on the samples used in '{song}' by {artist}."
+song = st.text_input('Song title:')
+artist = st.text_input('Artist name:')
 
-            # Setting up the Perplexity API request
-            url = 'https://api.perplexity.ai/chat/completions'
-            headers = {
-                'Authorization': f'Bearer {perplexity_api_key}',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-            payload = {
-                "model": "sonar-medium-online",  # Specify the model capable of real-time searches
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": query
-                    }
-                ]
-            }
-
-            response = requests.post(url, headers=headers, json=payload)
-
-            if response.status_code == 200:
-                # Extracting the insight from Perplexity
-                perplexity_insights = response.json()['choices'][0]['message']['content']
-                
-                # Now formatting with GPT-4 using the correct model
-                openai.api_key = openai_api_key
-                gpt_prompt = f"Format the following information into a concise summary and generate a YouTube search link: {perplexity_insights} For the song '{song}' by '{artist}'."
-
-                try:
-                    gpt_response = openai.ChatCompletion.create(
-                        model="gpt-4-0125-preview",
-                        messages=[
-                            {"role": "system", "content": "You are a knowledgeable music enthusiast. Help to format song details and generate a YouTube search link."},
-                            {"role": "user", "content": gpt_prompt}
-                        ]
-                    )
-                    formatted_text = gpt_response.choices[0].message['content']
-                    st.markdown(formatted_text)
-                except Exception as e:
-                    st.error(f"An error occurred with GPT-4: {str(e)}")
-            else:
-                st.error(f"Failed with status code {response.status_code}: {response.text}")
-        else:
-            st.warning('Please enter both a song title and an artist name to find samples.')
+if st.button('Find Samples'):
+    if song and artist:
+        try:
+            samples_details = fetch_song_samples(song, artist)
+            formatted_response = format_response_with_gpt4(samples_details)
+            st.markdown(formatted_response)
+        except Exception as e
