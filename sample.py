@@ -24,7 +24,7 @@ chosen_image = random.choice(images)
 st.image(chosen_image, use_column_width=True)
 
 # Update the header with the new copy using regular font weight
-st.markdown("Hi, I’m Vibe Pup; give me any song and I’ll sniff out the samples used to make it, woof.")
+st.markdown(<strong>"Hi, I’m Vibe Pup; give me any song and I’ll sniff out the samples used to make it, woof.</strong>")
 
 if api_key is None:
     st.error("Perplexity API key not found. Please set the PERPLEXITY_API_KEY environment variable.")
@@ -64,3 +64,7 @@ else:
                 st.error(f"Failed with status code {response.status_code}: {response.text}")
         else:
             st.warning('Please enter both a song title and an artist name to find samples.')
+            # Add a line and link to Instagram at the bottom of the page
+st.markdown("---")
+st.markdown(
+    """<a href="http://www.instagram.com/rileywallace" target="_blank">Meet my cat dad</a>""", unsafe_allow_html=True)
