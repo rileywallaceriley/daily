@@ -1,9 +1,9 @@
 import os
 import requests
 import streamlit as st
+from dotenv import load_dotenv
 
 # Load environment variables
-from dotenv import load_dotenv
 load_dotenv()
 
 api_key = os.getenv('PERPLEXITY_API_KEY')
@@ -43,8 +43,29 @@ else:
             response = requests.post(url, headers=headers, json=payload)
 
             if response.status_code == 200:
-                insights = response.json()['choices'][0]['message']['content']
-                st.write(insights)
+                # Assuming the API response includes detailed information in a structured format
+                # This part needs to be adjusted based on the actual structure of your API response
+                data = response.json()['choices'][0]['message']['content']
+                # Parse 'data' to extract relevant details
+                # Here you need to adapt this logic to match the response structure of your API
+                # For demonstration, let's assume 'data' contains a dict with the required info
+                # This is a placeholder to show formatting; replace with real parsing logic
+                details = {
+                    "song_title": song,
+                    "artist": artist,
+                    "producers": "John Doe, Jane Smith",
+                    "album": "Hits of 2024",
+                    "youtube_link": "https://youtu.be/dQw4w9WgXcQ"
+                }
+                
+                # Displaying the details in a structured format
+                st.subheader(f"Details for '{details['song_title']}' by {details['artist']}")
+                st.markdown(f"""
+                - **Artist:** {details['artist']}
+                - **Producers:** {details['producers']}
+                - **Album:** {details['album']}
+                - **Listen on YouTube:** [Link]({details['youtube_link']})
+                """)
             else:
                 st.error(f"Failed with status code {response.status_code}: {response.text}")
         else:
