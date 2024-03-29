@@ -2,7 +2,10 @@ import os
 import requests
 import streamlit as st
 
-# Attempt to retrieve the API key from an environment variable
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
 api_key = os.getenv('PERPLEXITY_API_KEY')
 
 if api_key is None:
@@ -15,11 +18,10 @@ else:
     song = st.text_input('Enter the song title:')
     artist = st.text_input('Enter the artist name:')
 
-    # Button to initiate sample search
     if st.button('Find Samples'):
         if song and artist:
-            # Formulating the query for the Perplexity API
-            query = f"List and describe the samples used in the song '{song}' by {artist}."
+            # Formulating the query for real-time data
+            query = f"Provide real-time information on the samples used in '{song}' by {artist}."
 
             # Setting up the API request
             url = 'https://api.perplexity.ai/chat/completions'
@@ -29,12 +31,8 @@ else:
                 'Accept': 'application/json'
             }
             payload = {
-                "model": "sonar-medium-online",
+                "model": "sonar-medium-online",  # Specify the model capable of real-time searches
                 "messages": [
-                    {
-                        "role": "system",
-                        "content": "Provide a detailed analysis of the music samples."
-                    },
                     {
                         "role": "user",
                         "content": query
@@ -42,16 +40,12 @@ else:
                 ]
             }
 
-            # Sending the request to the Perplexity API
             response = requests.post(url, headers=headers, json=payload)
 
-            # Handling the response
             if response.status_code == 200:
-                # Extracting the insights about the samples
                 insights = response.json()['choices'][0]['message']['content']
                 st.write(insights)
             else:
-                # Displaying error messages if something goes wrong
                 st.error(f"Failed with status code {response.status_code}: {response.text}")
         else:
             st.warning('Please enter both a song title and an artist name to find samples.')
