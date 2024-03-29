@@ -48,18 +48,19 @@ else:
                 # Extracting the insight from Perplexity
                 perplexity_insights = response.json()['choices'][0]['message']['content']
                 
-                # Now formatting with GPT-4
+                # Now formatting with GPT-4 using the correct model
                 openai.api_key = openai_api_key
-                gpt_prompt = f"Format the following information into a concise summary: {perplexity_insights}\n\nGenerate a YouTube search link for the song '{song}' by {artist}."
+                gpt_prompt = f"Format the following information into a concise summary and generate a YouTube search link: {perplexity_insights} For the song '{song}' by '{artist}'."
 
                 try:
-                    gpt_response = openai.Completion.create(
-                        model="text-davinci-003",
-                        prompt=gpt_prompt,
-                        temperature=0.5,
-                        max_tokens=150
+                    gpt_response = openai.ChatCompletion.create(
+                        model="gpt-4-0125-preview",
+                        messages=[
+                            {"role": "system", "content": "You are a knowledgeable music enthusiast. Help to format song details and generate a YouTube search link."},
+                            {"role": "user", "content": gpt_prompt}
+                        ]
                     )
-                    formatted_text = gpt_response.choices[0].text.strip()
+                    formatted_text = gpt_response.choices[0].message['content']
                     st.markdown(formatted_text)
                 except Exception as e:
                     st.error(f"An error occurred with GPT-4: {str(e)}")
