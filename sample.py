@@ -23,8 +23,8 @@ chosen_image = random.choice(images)
 # Display the chosen image
 st.image(chosen_image, use_column_width=True)
 
-# Update the header with the new copy
-st.header("Hi, I’m Vibe Pup; give me any song and I’ll sniff out the samples used to make it, woof.")
+# Update the header with the new copy using regular font weight
+st.markdown("Hi, I’m Vibe Pup; give me any song and I’ll sniff out the samples used to make it, woof.")
 
 if api_key is None:
     st.error("Perplexity API key not found. Please set the PERPLEXITY_API_KEY environment variable.")
