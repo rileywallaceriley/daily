@@ -19,7 +19,7 @@ images = [
 chosen_image = random.choice(images)
 st.image(chosen_image, use_column_width=True)
 
-st.markdown("Hi, I’m Vibe Pup; give me any song or album and I’ll sniff out the samples used to make it. Want to find the songs that sample the song or album? Just click the checkbox, woof.")
+st.markdown("Hi, I’m Vibe Pup; give me any song or album and I’ll sniff out the samples used to make it, woof.")
 
 if api_key is None:
     st.error("Perplexity API key not found. Please set the PERPLEXITY_API_KEY environment variable.")
@@ -27,36 +27,32 @@ else:
     # Dropdown to select search by song or album
     search_type = st.selectbox('Search by:', ['Song', 'Album'])
 
-    # User input for song or album
-    if search_type == 'Song':
-        song_or_album = st.text_input('Enter the song title:')
-    else:
-        song_or_album = st.text_input('Enter the album name:')
-
+    # User inputs for song or album, and artist name
+    song_or_album = st.text_input(f'Enter the {search_type.lower()} title:')
+    artist_name = st.text_input('Enter the artist name:')
+    
     # Checkbox for reverse search
     reverse_search = st.checkbox('Reverse?')
 
     if st.button('Find Samples'):
-        if song_or_album:
+        if song_or_album and artist_name:
             # Adjusting the query based on the user's choices
-            if reverse_search:
-                query_type = "notable songs that sampled this" if search_type == 'Song' else "notable songs that sampled this album"
-            else:
-                query_type = "samples used to make this song" if search_type == 'Song' else "samples used to make this album"
-                
-            query = f"Provide real-time information on {query_type} '{song_or_album}'."
+            query_context = "notable songs that sampled this" if reverse_search else "samples used to make this"
+            query = f"Provide real-time information on {query_context} '{song_or_album}' by '{artist_name}'."
 
             # API request setup remains the same
             url = 'https://api.perplexity.ai/chat/completions'
             headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json', 'Accept': 'application/json'}
             payload = {"model": "sonar-medium-online", "messages": [{"role": "user", "content": query}]}
 
-            response = requests.post(url, headers=headers, json=payload)
+            # Display a loading message while fetching data
+            with st.spinner(f"Fetching {query_context} for '{song_or_album}' by '{artist_name}'..."):
+                response = requests.post(url, headers=headers, json=payload)
 
-            if response.status_code == 200:
-                insights = response.json()['choices'][0]['message']['content']
-                st.write(insights)
-            else:
-                st.error(f"Failed with status code {response.status_code}: {response.text}")
+                if response.status_code == 200:
+                    insights = response.json()['choices'][0]['message']['content']
+                    st.write(insights)
+                else:
+                    st.error(f"Failed with status code {response.status_code}: {response.text}")
         else:
-            st.warning(f'Please enter a {search_type.lower()} name to find samples.')
+            st.warning('Please enter both the title and artist name to find samples.')
