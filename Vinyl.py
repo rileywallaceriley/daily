@@ -1,36 +1,44 @@
 import streamlit as st
 import openai
+import requests  # Import requests library for web scraping
 
-# Set your OpenAI API key from Streamlit's secrets
+# Assuming your OpenAI API key is set in your Streamlit app's secrets
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-def format_search_results_with_gpt4(search_query):
-    """Formats the search results for vinyl records using the GPT-4 Chat model based on a user's search query."""
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4-0125-preview",  # Ensure this model is correct and available
-            messages=[
-                {"role": "system", "content": "You are an AI trained to find and present information about vinyl records based on a search query. Provide details such as the title, artist, release date, and a direct link if available."},
-                {"role": "user", "content": f"Search for: {search_query}"}
-            ]
-        )
-        return response.choices[0].message['content']
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
-        return ""
+def search_vinyl_record(artist, song):
+  """Searches online marketplaces for vinyl records using OpenAI and web scraping."""
+  try:
+    # Use OpenAI to generate a search query
+    response = openai.Completion.create(
+        engine="text-davinci-003",  # Use a factual language model
+        prompt=f"Generate a search query to find vinyl records for the song '{song}' by the artist '{artist}'",
+        max_tokens=100,
+        n=1,
+        stop=None,
+        temperature=0.7,
+    )
+    search_query = response.choices[0].text.strip()
 
-st.title('Vinyl Hunter')
+    # Use the search query to scrape relevant websites (replace with desired website(s))
+    url = f"https://www.example.com/search?q={search_query}"  # Replace with actual search URL
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, "html.parser")  # Parse HTML content (using BeautifulSoup)
+    # Implement logic to find relevant elements (e.g., product listings) and extract data (record details, prices)
 
-# User input for the search query
-search_query = st.text_input('Enter the artist or album you are searching for:')
+    # Return formatted results (you can customize the format)
+    results = f"Found vinyl records for '{song}' by '{artist}' on example.com (replace with actual website name)"
+    # Add logic to display details and prices if extracted from scraping
 
-if search_query:
-    # Call the function to format search results with GPT-4
-    formatted_results = format_search_results_with_gpt4(search_query)
-    
-    if formatted_results:
-        # Display the formatted results
-        st.subheader('Search Results')
-        st.write(formatted_results)
-    else:
-        st.write("No results found or there was an error processing your request.")
+    return results
+  except Exception as e:
+    st.error(f"An error occurred: {e}")
+    return ""
+
+st.title('Vinyl Hunter - Real Search')
+
+artist = st.text_input('Artist:', value='702')
+song = st.text_input('Song:', value='Steelo')
+
+if st.button('Find Vinyl'):
+  result = search_vinyl_record(artist, song)
+  st.write(result)
