@@ -18,35 +18,14 @@ def fetch_gold_price(query):
     response = requests.post(url, headers=headers, json=payload)
     if response.status_code == 200:
         data = response.json()
-        # Example parsing logic, adjust based on actual response structure
-        try:
-            # Extract and return the gold price and date from the response
-            gold_price_info = data['data']['content']  # Adjust based on actual key paths
-            return {"success": True, "data": gold_price_info}
-        except KeyError:
-            return {"success": False, "error": "Failed to parse response data."}
+        # Temporarily print the entire response to inspect its structure
+        st.write(data)
+        return {"success": True, "data": data}
     else:
         return {"success": False, "error": response.text}
 
-# Streamlit UI
+# Streamlit UI setup to inspect the response
 st.title('Gold Price in Canada')
-
-# Today's date for the query
 today_date = datetime.now().strftime('%Y-%m-%d')
 query = f"What is the price of gold per gram in Canada as of today, {today_date}?"
-
-# Fetching gold price data
-result = fetch_gold_price(query)
-
-if result["success"]:
-    # Displaying the result
-    st.success("Data fetched successfully!")
-    
-    # Aesthetically pleasing presentation
-    st.markdown(f"### Gold Price on {today_date}")
-    st.markdown(f"**Price per gram:** {result['data']}")
-    
-    # Example of adding visual elements
-    st.metric(label="Gold Price (per gram)", value=result['data'])
-else:
-    st.error(f"Error fetching data: {result['error']}")
+fetch_gold_price(query)
