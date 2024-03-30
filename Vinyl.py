@@ -1,44 +1,31 @@
-import streamlit as st
 import openai
-import requests
-from bs4 import BeautifulSoup
+import streamlit as st
 
-# Placeholder for your OpenAI and Google API keys
-OPENAI_API_KEY = 'your_openai_api_key'
-GOOGLE_API_KEY = 'your_google_api_key'
-GOOGLE_CSE_ID = 'your_google_custom_search_engine_id'
+# Assuming your OpenAI API key is correctly set in Streamlit's secrets
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# Initialize OpenAI with your API key
-openai.api_key = OPENAI_API_KEY
+def format_search_results(search_results):
+    """Formats the search results for vinyl records using the GPT-4 Chat model."""
+    try:
+        formatted_response = openai.ChatCompletion.create(
+            model="gpt-4-0125-preview",  # Make sure this is the correct model identifier
+            messages=[
+                {"role": "system", "content": "You are an AI trained to organize and present search results for vinyl records in a concise, easy-to-read format. Include relevant details such as the title, artist, release date, and a direct link."},
+                {"role": "user", "content": f"Search results: {search_results}"}
+            ]
+        )
+        return formatted_response.choices[0].message['content']
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
+        return ""
 
-def search_google(query):
-    # Example function to perform a Google search using your API
-    # Replace this with your actual method to search and return results
-    search_url = f"https://www.googleapis.com/customsearch/v1?key={GOOGLE_API_KEY}&cx={GOOGLE_CSE_ID}&q={query}"
-    response = requests.get(search_url)
-    result_links = [item['link'] for item in response.json().get('items', [])]
-    return result_links
-
-def format_with_gpt4(links):
-    # Example function to process links with GPT-4 for formatting
-    prompt = f"Format these vinyl record links into a readable summary: {links}"
-    response = openai.Completion.create(
-        engine="text-davinci-003",  # Check for the latest GPT-4 engine version
-        prompt=prompt,
-        max_tokens=1024,
-        temperature=0.7,
-    )
-    return response.choices[0].text.strip()
-
-# Streamlit UI
+# Example usage within Streamlit
 st.title('Vinyl Hunter')
-query = st.text_input('Enter artist and album or song:')
-if query:
-    # Search using Google API
-    links = search_google(query)
-    
-    # Process and format the results with GPT-4
-    formatted_results = format_with_gpt4(links)
-    
-    # Display formatted results
-    st.write(formatted_results)
+
+# This part is where you'd integrate the search functionality
+# For demonstration, we're using placeholder search results
+placeholder_search_results = "Here are some placeholder search results about vinyl records."
+if st.button('Format Search Results'):
+    results = format_search_results(placeholder_search_results)
+    st.write('Formatted Search Results:')
+    st.write(results)
