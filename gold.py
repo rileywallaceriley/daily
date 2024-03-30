@@ -1,11 +1,10 @@
 import streamlit as st
 import requests
 
-# Function to send a request to Perplexity AI and fetch data
 def fetch_data_from_perplexity(query):
     url = 'https://api.perplexity.ai/chat/completions'
     headers = {
-        'Authorization': f'Bearer {st.secrets["api_key"]}',
+        'Authorization': f'Bearer {st.secrets["PERPLEXITY_API_KEY"]}',
         'Content-Type': 'application/json',
         'Accept': 'application/json'
     }
@@ -25,10 +24,8 @@ def fetch_data_from_perplexity(query):
 # Streamlit UI
 st.title('Current Prices Fetcher')
 
-# The query you want to send to Perplexity AI
 query = "What is the current price of both silver and gold per gram as of today’s date in CAD?"
 
-# Fetch and display data
 result = fetch_data_from_perplexity(query)
 
 if result["success"]:
