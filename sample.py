@@ -24,26 +24,24 @@ st.markdown("Hi, I’m Vibe Pup; give me any song and I’ll sniff out the sampl
 if api_key is None:
     st.error("Perplexity API key not found. Please set the PERPLEXITY_API_KEY environment variable.")
 else:
-    # User inputs for song and artist name
     song_title = st.text_input('Enter the song title:')
     artist_name = st.text_input('Enter the artist name:')
-    
-    # Checkbox for reverse search
     reverse_search = st.checkbox('Reverse?')
 
     if st.button('Find Samples'):
         if song_title and artist_name:
-            # Adjusting the query for song search
-            query_context = "notable songs that sampled this song" if reverse_search else "samples used to make this song"
-            query = f"Provide real-time information on {query_context} '{song_title}' by '{artist_name}'."
+            # Change the query based on the checkbox
+            if reverse_search:
+                query = f"Provide real-time information on songs that sample '{song_title}' by '{artist_name}'."
+            else:
+                query = f"Provide real-time information on the samples used in the song '{song_title}' by '{artist_name}'."
 
-            # API request setup remains the same
+            # API request setup
             url = 'https://api.perplexity.ai/chat/completions'
             headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json', 'Accept': 'application/json'}
             payload = {"model": "sonar-medium-online", "messages": [{"role": "user", "content": query}]}
 
-            # Display a loading message while fetching data
-            with st.spinner(f"Fetching {query_context} for '{song_title}' by '{artist_name}'..."):
+            with st.spinner('Fetching...'):
                 response = requests.post(url, headers=headers, json=payload)
 
                 if response.status_code == 200:
