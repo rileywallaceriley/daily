@@ -19,26 +19,23 @@ images = [
 chosen_image = random.choice(images)
 st.image(chosen_image, use_column_width=True)
 
-st.markdown("Hi, I’m Vibe Pup; give me any song or album and I’ll sniff out the samples used to make it, woof.")
+st.markdown("Hi, I’m Vibe Pup; give me any song and I’ll sniff out the samples used to make it, woof.")
 
 if api_key is None:
     st.error("Perplexity API key not found. Please set the PERPLEXITY_API_KEY environment variable.")
 else:
-    # Dropdown to select search by song or album
-    search_type = st.selectbox('Search by:', ['Song', 'Album'])
-
-    # User inputs for song or album, and artist name
-    song_or_album = st.text_input(f'Enter the {search_type.lower()} title:')
+    # User inputs for song and artist name
+    song_title = st.text_input('Enter the song title:')
     artist_name = st.text_input('Enter the artist name:')
     
     # Checkbox for reverse search
     reverse_search = st.checkbox('Reverse?')
 
     if st.button('Find Samples'):
-        if song_or_album and artist_name:
-            # Adjusting the query based on the user's choices
-            query_context = "notable songs that sampled this" if reverse_search else "samples used to make this"
-            query = f"Provide real-time information on {query_context} '{song_or_album}' by '{artist_name}'."
+        if song_title and artist_name:
+            # Adjusting the query for song search
+            query_context = "notable songs that sampled this song" if reverse_search else "samples used to make this song"
+            query = f"Provide real-time information on {query_context} '{song_title}' by '{artist_name}'."
 
             # API request setup remains the same
             url = 'https://api.perplexity.ai/chat/completions'
@@ -46,7 +43,7 @@ else:
             payload = {"model": "sonar-medium-online", "messages": [{"role": "user", "content": query}]}
 
             # Display a loading message while fetching data
-            with st.spinner(f"Fetching {query_context} for '{song_or_album}' by '{artist_name}'..."):
+            with st.spinner(f"Fetching {query_context} for '{song_title}' by '{artist_name}'..."):
                 response = requests.post(url, headers=headers, json=payload)
 
                 if response.status_code == 200:
@@ -55,4 +52,4 @@ else:
                 else:
                     st.error(f"Failed with status code {response.status_code}: {response.text}")
         else:
-            st.warning('Please enter both the title and artist name to find samples.')
+            st.warning('Please enter both the song title and artist name to find samples.')
